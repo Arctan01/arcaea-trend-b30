@@ -1,0 +1,601 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Arcaea B30 Viewer</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Exo+2:ital,wght@0,300;0,400;0,600;0,700;0,900;1,400&family=Rajdhani:wght@400;500;600;700&display=swap');
+
+:root {
+  --bg:      #0b0c18;
+  --bg2:     #10121f;
+  --bg3:     #14162a;
+  --surface: #181b2e;
+  --surf2:   #1e2238;
+  --border:  #272b48;
+  --border2: #323660;
+  --accent:  #c8a0ff;
+  --accent2: #80c4ff;
+  --gold:    #ffd580;
+  --green:   #6bffb8;
+  --red:     #ff6b8a;
+  --text:    #eae8ff;
+  --text2:   #9896c8;
+  --text3:   #525080;
+  --pm_color:    #2580A0;
+  --fr_color:  #773481;
+  --hc_color:  #C72F5B;
+  --nc_color:  #774271;
+  --tl_color:  #C34C6F;
+  --p_color:   #C534A2;
+  --f_color:   #EBB69D;
+  --l_color:  #a94658;
+
+
+  --byd:       #e84060;
+  --byd-light: #ff7090;
+  --byd-bg:    rgba(232,64,96,0.13);
+  --ftr:       #a050f0;
+  --ftr-light: #c080ff;
+  --ftr-bg:    rgba(160,80,240,0.13);
+  --etr:       #8A7AA5;
+  --etr-light: #A592C6;
+  --etr-bg:    rgba(64,160,232,0.12);
+  --pst:       #50d890;
+  --pst-light: #80ffb8;
+  --pst-bg:    rgba(80,216,144,0.10);
+}
+
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+
+body{
+  background:var(--bg);
+  color:var(--text);
+  font-family:'Exo 2',sans-serif;
+  min-height:100vh;
+  overflow-x:hidden;
+}
+body::before{
+  content:'';
+  position:fixed;inset:0;
+  background:
+    radial-gradient(ellipse 70% 50% at 15% 5%,rgba(120,60,220,.10) 0%,transparent 55%),
+    radial-gradient(ellipse 50% 70% at 85% 90%,rgba(50,90,200,.07) 0%,transparent 55%);
+  pointer-events:none;z-index:0;
+}
+
+.wrap{max-width:1100px;margin:0 auto;padding:28px 20px 48px;position:relative;z-index:1}
+
+/* header */
+.player-name{font-size:24px;font-weight:900;letter-spacing:.04em;display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:6px}
+.ptt-pill{background:linear-gradient(135deg,#7030c8,#5020a0);border:1px solid #a060ff;border-radius:6px;padding:2px 10px 3px;font-size:13px;font-family:'Rajdhani',sans-serif;font-weight:700;letter-spacing:.1em;color:#fff}
+.stats-row{display:flex;gap:20px;flex-wrap:wrap;margin-bottom:22px}
+.stat{font-family:'Rajdhani',sans-serif;font-size:12px;color:var(--text3);letter-spacing:.06em}
+.stat b{color:var(--accent);font-weight:700}
+
+/* upload */
+.upload-bar{display:flex;gap:12px;flex-wrap:wrap;background:var(--surface);border:1px dashed var(--border2);border-radius:10px;padding:14px 18px;margin-bottom:20px;align-items:center}
+.upload-group{display:flex;align-items:center;gap:8px;flex:1;min-width:200px}
+.upload-tag{font-family:'Rajdhani',sans-serif;font-size:11px;font-weight:700;letter-spacing:.12em;color:var(--text3);white-space:nowrap}
+.upload-btn{background:var(--surf2);border:1px solid var(--border2);border-radius:5px;color:var(--text2);padding:5px 12px;font-family:'Rajdhani',sans-serif;font-size:12px;font-weight:600;cursor:pointer;transition:border-color .18s,color .18s;white-space:nowrap}
+.upload-btn:hover{border-color:var(--accent);color:var(--accent)}
+input[type=file]{display:none}
+.fstat{font-size:11px;color:var(--text3);font-family:'Rajdhani',sans-serif}
+.fstat.ok{color:var(--green)}
+.img-path-input{background:var(--surf2);border:1px solid var(--border2);border-radius:5px;color:var(--text2);padding:5px 10px;font-family:'Rajdhani',sans-serif;font-size:12px;outline:none;flex:1;transition:border-color .18s;min-width:120px}
+.img-path-input:focus{border-color:var(--accent)}
+.img-path-input::placeholder{color:var(--text3)}
+
+/* chart */
+.chart-wrap{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:20px 22px 16px;margin-bottom:20px;position:relative}
+.sec-lbl{font-family:'Rajdhani',sans-serif;font-size:10px;font-weight:700;letter-spacing:.18em;color:var(--text3);text-transform:uppercase;margin-bottom:12px}
+#ratingChart{width:100%;height:190px;cursor:crosshair;display:block}
+.c-tip{position:absolute;background:var(--bg3);border:1px solid rgba(200,160,255,.5);border-radius:8px;padding:8px 14px;font-family:'Rajdhani',sans-serif;pointer-events:none;display:none;z-index:50;min-width:190px;box-shadow:0 6px 24px rgba(0,0,0,.55)}
+.ct-date{font-size:11px;color:var(--text2);margin-bottom:3px}
+.ct-ptt{font-size:18px;font-weight:700;color:var(--accent);letter-spacing:.04em}
+.ct-b30{font-size:11px;color:var(--text3);margin-top:2px}
+
+/* b30 head */
+.b30-head{display:flex;align-items:baseline;gap:10px;margin-bottom:10px;flex-wrap:wrap}
+.b30-title{font-family:'Rajdhani',sans-serif;font-size:10px;font-weight:700;letter-spacing:.18em;color:var(--text3);text-transform:uppercase}
+.b30-date{font-family:'Rajdhani',sans-serif;font-size:13px;font-weight:600;color:var(--accent2);letter-spacing:.04em}
+.b30-avg{font-family:'Rajdhani',sans-serif;font-size:13px;color:var(--text2)}
+.b30-avg b{color:var(--accent)}
+
+/* 3-column grid */
+.cards-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+@media(max-width:760px){.cards-grid{grid-template-columns:repeat(2,1fr)}}
+@media(max-width:460px){.cards-grid{grid-template-columns:1fr}}
+
+/* card */
+.song-card{
+  border-radius:10px;
+  border:1px solid var(--c-border,var(--border));
+  overflow:hidden;
+  display:flex;
+  height:82px;
+  position:relative;
+  transition:border-color .18s,transform .14s;
+  background:var(--surface);
+}
+.song-card:hover{transform:translateY(-1px);border-color:var(--c-main,var(--border2))}
+/* left accent bar */
+.song-card::after{
+  content:'';
+  position:absolute;left:0;top:0;bottom:0;width:3px;
+  background:var(--c-main,var(--border2));
+  border-radius:10px 0 0 10px;
+}
+
+/* cover */
+.card-cover{
+  width:82px;min-width:82px;height:82px;
+  position:relative;flex-shrink:0;
+  background:var(--surf2);
+  display:flex;align-items:center;justify-content:center;
+}
+.card-cover img{width:82px;height:82px;object-fit:cover;display:block;position:absolute;inset:0}
+.card-cover .no-img{
+  font-size:24px;color:var(--c-main,var(--text3));opacity:.5;
+  display:flex;align-items:center;justify-content:center;
+  width:82px;height:82px;
+}
+
+/* body */
+.card-body{flex:1;min-width:0;padding:7px 10px 7px 9px;display:flex;flex-direction:column;justify-content:space-between;position:relative}
+
+.card-r1{display:flex;align-items:center;justify-content:space-between;gap:4px}
+.card-rank-title {
+  display: flex;
+  align-items: center; 
+  gap: 5px;
+}
+.card-no {
+  font-family: 'Rajdhani', sans-serif;
+  font-size: 17px;
+  font-weight: 700;
+  color: var(--text3);
+  letter-spacing: .06em;
+}
+.card-title{font-family: 'Rajdhani', sans-serif;font-size:17px;font-weight:700;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+
+/* .card-diff{
+  font-family:'Rajdhani',sans-serif;font-size:9px;font-weight:700;
+  letter-spacing:.1em;padding:1px 4px;border-radius:3px;
+  background:var(--c-bg,var(--surf2));
+  color:var(--c-main,var(--text2));
+  border:1px solid color-mix(in srgb,var(--c-main,var(--border)) 50%,transparent);
+} */
+.card-ptt{
+  font-family:'Rajdhani',sans-serif;font-size:17px;font-weight:700;
+  color:var(--c-main,var(--accent));letter-spacing:.02em;white-space:nowrap;
+}
+
+
+.card-r3{display:flex;align-items:center;justify-content:space-between;gap:4px}
+.card-score{font-family:'Rajdhani',sans-serif;font-size:25px;font-weight:600;color:var(--text2);letter-spacing:.04em}
+.card-clear{
+  position: absolute;
+  left: 140px;          
+  font-family: 'Rajdhani', sans-serif;
+  font-size: 25px;
+  font-weight: 700;
+  text-transform: uppercase;
+  color: var(--text3);
+}
+.card-const{
+  font-family:'Rajdhani',sans-serif;font-size:13px;font-weight:700;
+  padding:1px 5px;border-radius:3px;
+  background:var(--c-bg,var(--surf2));
+  color:var(--c-main,var(--text2));
+  white-space:nowrap;
+}
+
+.card-pfl{display:flex;gap:6px}
+.pfl-item{font-family:'Rajdhani',sans-serif;font-size:14px;color:var(--text3);letter-spacing:.02em}
+.pfl-item b{color:var(--text2)}
+
+.p-item{font-family:'Rajdhani',sans-serif;font-size:14px;color:var(--p_color);letter-spacing:.02em}
+.f-item{font-family:'Rajdhani',sans-serif;font-size:14px;color:var(--f_color);letter-spacing:.02em}
+.l-item{font-family:'Rajdhani',sans-serif;font-size:14px;color:var(--l_color);letter-spacing:.02em}
+
+.card-clear.pm{color:var(--pm_color)}
+.card-clear.fr{color:var(--fr_color)}
+/* .card-clear.nc{color:var(--nc_color)}
+.card-clear.hc{color:var(--hc_color)}
+.card-clear.tl{color:var(--tl_color)} */
+.card-date{
+  position:absolute;right:9px;bottom:2px;
+  font-family:'Rajdhani',sans-serif;font-size:14px;font-weight:700;
+  text-transform:uppercase;color:var(--text3);
+}
+/* empty */
+.empty-state{grid-column:1/-1;text-align:center;padding:50px 20px;color:var(--text3);font-family:'Rajdhani',sans-serif;font-size:14px;letter-spacing:.1em}
+.ei{font-size:36px;margin-bottom:10px;opacity:.3}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <div class="player-name">
+    <span id="pName">Arcaea B30</span>
+    <span class="ptt-pill" id="pPtt">PTT —</span>
+  </div>
+  <div class="stats-row">
+    <div class="stat">B30 Avg <b id="hB30">—</b></div>
+    <div class="stat">期间 <b id="hRange">—</b></div>
+  </div>
+
+  <div class="upload-bar">
+    <div class="upload-group">
+      <div class="upload-tag">RATING</div>
+      <label class="upload-btn" for="f1">选择 CSV</label>
+      <input type="file" id="f1" accept=".csv">
+      <div class="fstat" id="s1">未加载</div>
+    </div>
+    <div class="upload-group">
+      <div class="upload-tag">PLAYS</div>
+      <label class="upload-btn" for="f2">选择 CSV</label>
+      <input type="file" id="f2" accept=".csv">
+      <div class="fstat" id="s2">未加载</div>
+    </div>
+    <!-- <div class="upload-group" style="gap:6px">
+      <div class="upload-tag">IMG</div>
+      <input class="img-path-input" id="imgBase" type="text"
+        placeholder="封面路径前缀，如 songs/">
+    </div> -->
+  </div>
+
+  <div class="chart-wrap">
+    <div class="sec-lbl">RATING HISTORY — 悬停查看当时 B30 · 移出后保持显示</div>
+    <canvas id="ratingChart"></canvas>
+    <div class="c-tip" id="cTip">
+      <div class="ct-date" id="tipDate"></div>
+      <div class="ct-ptt"  id="tipPtt"></div>
+      <div class="ct-b30"  id="tipB30"></div>
+    </div>
+  </div>
+
+  <div class="b30-head">
+    <div class="b30-title">BEST 30</div>
+    <div class="b30-date" id="b30DL"></div>
+    <div class="b30-avg">Avg <b id="b30AL">—</b></div>
+  </div>
+  <div class="cards-grid" id="grid">
+    <div class="empty-state"><div class="ei">♪</div>请上传 CSV 文件后查看</div>
+  </div>
+
+</div>
+<script>
+// ── state ────────────────────────────────────────
+let ratingHistory=[], playHistory=[];
+let chartData=[];
+let hoverIdx=-1;
+let shownB30=[], shownDate='';   // what's currently displayed (persist on mouseout)
+
+// ── utils ────────────────────────────────────────
+const toMs = t => t < 1e12 ? t*1000 : t;
+
+function parseDateStr(s){
+  if(!s) return null;
+  const m=s.match(/(\d{4})[\/\-](\d{1,2})[\/\-](\d{1,2})\s+(\d{1,2}):(\d{2})/);
+  if(!m) return null;
+  const d=new Date(+m[1],+m[2]-1,+m[3],+m[4],+m[5]);
+  return isNaN(d.getTime())?null:d.getTime();
+}
+
+function calculateDaysSince(ts) {
+  if (!ts) return '—';
+  const past = new Date(ts);
+  const now = new Date();
+  // 计算时间差（毫秒），然后转换为天数
+  const diffTime = Math.abs(now - past);
+  const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)); 
+  return diffDays;
+}
+
+function fmtScore(n){
+  const s=String(n).padStart(8,'0');
+  return s.replace(/(\d{2})(\d{3})(\d{3})/,"$1'$2'$3");
+}
+
+function diffName(d){return['PST','PRS','FTR','BYD','ETR'][d]??'FTR'}
+
+function diffStyle(d){
+  if(d===4) return {main:'var(--etr)',bg:'var(--etr-bg)',border:'rgba(64,160,232,.35)'};
+  if(d===3) return {main:'var(--byd)',bg:'var(--byd-bg)',border:'rgba(232,64,96,.35)'};
+  if(d===2) return {main:'var(--ftr)',bg:'var(--ftr-bg)',border:'rgba(160,80,240,.35)'};
+  return           {main:'var(--pst)',bg:'var(--pst-bg)',border:'rgba(80,216,144,.30)'};
+}
+
+function clearCls(ct){
+  if(ct===5) return {lbl:'HC',cls:'hc'};
+  if(ct===4) return {lbl:'EC',cls:'ec'};
+  if(ct===3) return {lbl:'PM',cls:'pm'};
+  if(ct===2) return {lbl:'FR',cls:'fr'};
+  if(ct===1) return {lbl:'NC',cls:'nc'};
+  if(ct===0) return {lbl:'TL',cls:'tl'};
+  return {lbl:'',cls:''};
+}
+
+function imgSrc(songId,diff){
+  // const base=(document.getElementById('imgBase').value||'').replace(/\/$/,'');
+  // const pre=base?base+'/':'';
+  // return diff===3 ? `./songs/${songId}/1080_3_256.jpg` : `./songs/${songId}/1080_base_256.jpg`;
+  return `./songs/${songId}/1080_base_256.jpg`;
+}
+
+// ── CSV ──────────────────────────────────────────
+function parseRatingCSV(txt){
+  return txt.trim().split('\n').slice(1).map(l=>{
+    const p=l.split(',');
+    if(p.length<3) return null;
+    const ts=toMs(parseInt(p[0].trim()));
+    const dateStr=p[1].trim();
+    const rating=parseFloat(p[2].trim());
+    return isNaN(ts)||isNaN(rating)?null:{ts,dateStr,rating};
+  }).filter(Boolean).sort((a,b)=>a.ts-b.ts);
+}
+
+function parsePlayCSV(txt){
+  return txt.trim().split('\n').slice(1).map(l=>{
+    const p=l.split(',');
+    if(p.length<11) return null;
+    const ts=toMs(parseInt((p[10]||'').trim()));
+    const constant=parseFloat((p[3]||'').trim());
+    const potential=parseFloat((p[4]||'').trim());
+    const score=parseInt((p[2]||'').trim());
+    if(isNaN(ts)||isNaN(constant)||isNaN(potential)) return null;
+    return{
+      songId:(p[0]||'').trim(),
+      diff:parseInt((p[1]||'0').trim()),
+      score,constant,potential,
+      maxPure:parseInt((p[5]||'0').trim()),
+      pure:parseInt((p[6]||'0').trim()),
+      far:parseInt((p[7]||'0').trim()),
+      lost:parseInt((p[8]||'0').trim()),
+      clearType:parseInt((p[9]||'0').trim()),
+      ts,
+      dateStr:(p[11]||'').trim(),
+    };
+  }).filter(Boolean);
+}
+
+// ── B30 calc ─────────────────────────────────────
+function calcB30(ts) {
+  const best = new Map();
+  const EPSILON = 0.000001; // 统一容差值
+
+  for (const p of playHistory) {
+    if (p.ts > ts) continue;
+    
+    const k = p.songId + '_' + p.diff;
+    const existing = best.get(k);
+    
+    // 关键修复：当 potential 相等时，用更高分的记录覆盖
+    if (!existing || 
+        p.potential > existing.potential + EPSILON || 
+        (Math.abs(p.potential - existing.potential) <= EPSILON && p.score > existing.score)) {
+      best.set(k, p);
+    }
+  }
+
+  // 排序逻辑：先按 potential 降序，相等时按 score 降序
+  const all = [...best.values()].sort((a, b) => {
+    const diff = b.potential - a.potential;
+    if (Math.abs(diff) > EPSILON) return diff; // potential 不等时直接比较
+    return b.score - a.score; // potential 相等时按 score 降序
+  });
+
+  const b30 = all.slice(0, 30);
+  const avg = b30.length ? b30.reduce((s, x) => s + x.potential, 0) / b30.length : 0;
+  return { b30, avg, total: all.length };
+}
+
+// ── render ───────────────────────────────────────
+function renderCards(b30,dateLabel){
+  shownB30=b30; shownDate=dateLabel;
+  document.getElementById('b30DL').textContent=dateLabel||'';
+  document.getElementById('b30AL').textContent=
+    b30.length?(b30.reduce((s,x)=>s+x.potential,0)/b30.length).toFixed(4):'—';
+
+  const grid=document.getElementById('grid');
+  if(!b30.length){
+    grid.innerHTML='<div class="empty-state"><div class="ei">♪</div>此时间点无记录</div>';
+    return;
+  }
+
+  grid.innerHTML=b30.map((p,i)=>{
+    const ds=diffStyle(p.diff);
+    const cl=clearCls(p.clearType);
+    const src=imgSrc(p.songId,p.diff);
+    return`
+<div class="song-card"
+  style="--c-main:${ds.main};--c-bg:${ds.bg};--c-border:${ds.border}">
+
+  <div class="card-cover">
+    <div class="no-img">♪</div>
+    <img src="${src}" alt=""
+      onload="this.previousElementSibling.style.display='none'"
+      onerror="this.style.display='none'">
+  </div>
+
+  <div class="card-body">
+    <div class="card-r1">
+      <div class="card-rank-title">
+        <div class="card-no">#${i+1}</div>
+        <div class="card-title" title="${p.songId}">${p.songId}</div>
+      </div>
+      <div class="card-ptt">${p.potential.toFixed(4)}</div>
+    </div>
+    
+    <div class="card-r3">
+      <div class="card-score">${fmtScore(p.score)}</div>
+      ${cl.lbl?`<div class="card-clear ${cl.cls}">${cl.lbl}</div>`:''}
+      <div class="card-const">${p.constant.toFixed(1)}</div>
+    </div>
+    <div class="card-pfl">
+      <div class="p-item">P/<b>${p.pure}</b> (+<b>${p.maxPure}</b>) </div>
+      <div class="f-item">F/<b>${p.far}</b></div>
+      <div class="l-item">L/<b>${p.lost}</b></div>
+    </div>
+    <div class="card-date">${calculateDaysSince(p.ts)}d</div>
+  </div>
+</div>`;
+  }).join('');
+}
+
+function showCurrentB30(){
+  const{b30,avg}=calcB30(Date.now());
+  renderCards(b30,'当前');
+  document.getElementById('hB30').textContent=avg.toFixed(4);
+  if(ratingHistory.length){
+    document.getElementById('pPtt').textContent=
+      'PTT '+ratingHistory[ratingHistory.length-1].rating.toFixed(2);
+  }
+}
+
+// ── chart ────────────────────────────────────────
+const canvas=document.getElementById('ratingChart');
+const ctx=canvas.getContext('2d');
+
+function resizeCanvas(){
+  canvas.width=canvas.parentElement.clientWidth-44;
+  canvas.height=190;
+  drawChart();
+}
+
+function drawChart(){
+  const W=canvas.width,H=canvas.height;
+  ctx.clearRect(0,0,W,H);
+  if(!chartData.length){
+    ctx.fillStyle='#3a3858';ctx.font='12px Rajdhani,sans-serif';
+    ctx.textAlign='center';
+    ctx.fillText('上传 Rating History CSV 后显示折线图',W/2,H/2);
+    return;
+  }
+  const P={t:14,r:14,b:30,l:50};
+  const CW=W-P.l-P.r, CH=H-P.t-P.b;
+  const vals=chartData.map(d=>d.rating);
+  const mn=Math.min(...vals)-.08, mx=Math.max(...vals)+.08;
+  const xOf=i=>P.l+(i/(chartData.length-1||1))*CW;
+  const yOf=v=>P.t+(1-(v-mn)/(mx-mn))*CH;
+
+  // grid
+  for(let g=0;g<=4;g++){
+    const v=mn+(mx-mn)*g/4, y=yOf(v);
+    ctx.strokeStyle='#1e2238';ctx.lineWidth=1;ctx.setLineDash([3,4]);
+    ctx.beginPath();ctx.moveTo(P.l,y);ctx.lineTo(W-P.r,y);ctx.stroke();
+    ctx.setLineDash([]);
+    ctx.fillStyle='#504e78';ctx.font='10px Rajdhani,sans-serif';ctx.textAlign='right';
+    ctx.fillText(v.toFixed(2),P.l-5,y+3);
+  }
+  // fill
+  const gr=ctx.createLinearGradient(0,P.t,0,H-P.b);
+  gr.addColorStop(0,'rgba(160,80,240,.28)');gr.addColorStop(1,'rgba(160,80,240,0)');
+  ctx.beginPath();
+  ctx.moveTo(xOf(0),yOf(chartData[0].rating));
+  for(let i=1;i<chartData.length;i++) ctx.lineTo(xOf(i),yOf(chartData[i].rating));
+  ctx.lineTo(xOf(chartData.length-1),H-P.b);ctx.lineTo(xOf(0),H-P.b);
+  ctx.closePath();ctx.fillStyle=gr;ctx.fill();
+  // line
+  ctx.beginPath();
+  ctx.moveTo(xOf(0),yOf(chartData[0].rating));
+  for(let i=1;i<chartData.length;i++) ctx.lineTo(xOf(i),yOf(chartData[i].rating));
+  ctx.strokeStyle='#b070ff';ctx.lineWidth=2;ctx.setLineDash([]);ctx.stroke();
+  // hover
+  if(hoverIdx>=0&&hoverIdx<chartData.length){
+    const hx=xOf(hoverIdx),hy=yOf(chartData[hoverIdx].rating);
+    ctx.beginPath();ctx.moveTo(hx,P.t);ctx.lineTo(hx,H-P.b);
+    ctx.strokeStyle='rgba(180,120,255,.25)';ctx.lineWidth=1;ctx.setLineDash([3,3]);ctx.stroke();
+    ctx.setLineDash([]);
+    ctx.beginPath();ctx.arc(hx,hy,5,0,Math.PI*2);
+    ctx.fillStyle='#c080ff';ctx.fill();
+    ctx.strokeStyle='rgba(255,255,255,.8)';ctx.lineWidth=1.5;ctx.stroke();
+  }
+  // x labels
+  const step=Math.max(1,Math.floor(chartData.length/7));
+  ctx.fillStyle='#504e78';ctx.font='10px Rajdhani,sans-serif';ctx.textAlign='center';ctx.setLineDash([]);
+  for(let i=0;i<chartData.length;i+=step){
+    ctx.fillText(chartData[i].dateStr.split(' ')[0],xOf(i),H-P.b+13);
+  }
+}
+
+canvas.addEventListener('mousemove',function(e){
+  if(!chartData.length) return;
+  const rect=canvas.getBoundingClientRect();
+  const mx=(e.clientX-rect.left)*(canvas.width/rect.width);
+  const PL=50,PR=14;
+  const norm=(mx-PL)/(canvas.width-PL-PR);
+  hoverIdx=Math.max(0,Math.min(chartData.length-1,Math.round(norm*(chartData.length-1))));
+  drawChart();
+
+  const d=chartData[hoverIdx];
+  const hTs=parseDateStr(d.dateStr)||d.ts;
+  const{b30,avg}=calcB30(hTs);
+
+  const tip=document.getElementById('cTip');
+  document.getElementById('tipDate').textContent=d.dateStr;
+  document.getElementById('tipPtt').textContent='PTT '+d.rating.toFixed(2);
+  document.getElementById('tipB30').textContent=`B30 ${avg.toFixed(4)}  ·  ${b30.length} 曲`;
+  tip.style.display='block';
+  let tx=e.clientX-rect.left+14;
+  let ty=e.clientY-rect.top-10;
+  if(tx+210>rect.width) tx-=220;
+  if(ty<0) ty=4;
+  tip.style.left=tx+'px';tip.style.top=ty+'px';
+
+  // update cards — this becomes the new "last shown"
+  renderCards(b30,d.dateStr);
+});
+
+canvas.addEventListener('mouseleave',function(){
+  hoverIdx=-1;
+  drawChart();
+  document.getElementById('cTip').style.display='none';
+  // do NOT reset cards — keep whatever was last shown
+});
+
+// ── file upload ───────────────────────────────────
+document.getElementById('f1').addEventListener('change',function(e){
+  const f=e.target.files[0];if(!f) return;
+  const r=new FileReader();
+  r.onload=ev=>{
+    ratingHistory=parseRatingCSV(ev.target.result);
+    chartData=ratingHistory;
+    document.getElementById('s1').textContent=`✓ ${ratingHistory.length} 行`;
+    document.getElementById('s1').className='fstat ok';
+    if(ratingHistory.length){
+      const first=ratingHistory[0],last=ratingHistory[ratingHistory.length-1];
+      document.getElementById('pPtt').textContent='PTT '+last.rating.toFixed(2);
+      document.getElementById('hRange').textContent=
+        first.dateStr.split(' ')[0]+' ~ '+last.dateStr.split(' ')[0];
+    }
+    resizeCanvas();
+  };
+  r.readAsText(f);
+});
+
+document.getElementById('f2').addEventListener('change',function(e){
+  const f=e.target.files[0];if(!f) return;
+  const r=new FileReader();
+  r.onload=ev=>{
+    playHistory=parsePlayCSV(ev.target.result);
+    document.getElementById('s2').textContent=`✓ ${playHistory.length} 行`;
+    document.getElementById('s2').className='fstat ok';
+    showCurrentB30();
+  };
+  r.readAsText(f);
+});
+
+// re-render when img path changes
+document.getElementById('imgBase').addEventListener('change',function(){
+  if(shownB30.length) renderCards(shownB30,shownDate);
+});
+
+window.addEventListener('resize',resizeCanvas);
+setTimeout(resizeCanvas,60);
+</script>
+</body>
+</html>
