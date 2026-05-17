@@ -213,17 +213,91 @@ input[type=file]{display:none}
 /* empty */
 .empty-state{grid-column:1/-1;text-align:center;padding:50px 20px;color:var(--text3);font-family:'Rajdhani',sans-serif;font-size:14px;letter-spacing:.1em}
 .ei{font-size:36px;margin-bottom:10px;opacity:.3}
+
+/* ── modal overlay ── */
+.modal-overlay{
+  position:fixed;inset:0;background:rgba(0,0,0,.65);
+  display:flex;align-items:center;justify-content:center;
+  z-index:200;opacity:0;pointer-events:none;transition:opacity .2s;
+}
+.modal-overlay.open{opacity:1;pointer-events:all}
+.modal-box{
+  background:var(--surface);border:1px solid var(--border2);
+  border-radius:14px;padding:28px 30px;min-width:300px;
+  box-shadow:0 12px 48px rgba(0,0,0,.7);
+}
+.modal-box h3{
+  font-family:'Rajdhani',sans-serif;font-size:13px;font-weight:700;
+  letter-spacing:.15em;color:var(--text3);text-transform:uppercase;margin-bottom:16px;
+}
+.modal-field{margin-bottom:14px}
+.modal-field label{
+  display:block;font-family:'Rajdhani',sans-serif;font-size:11px;
+  font-weight:700;letter-spacing:.1em;color:var(--text2);margin-bottom:6px;
+}
+.modal-field input{
+  width:100%;background:var(--surf2);border:1px solid var(--border2);
+  border-radius:6px;color:var(--text);padding:7px 12px;
+  font-family:'Rajdhani',sans-serif;font-size:14px;outline:none;
+  transition:border-color .18s;
+}
+.modal-field input:focus{border-color:var(--accent)}
+.modal-actions{display:flex;gap:8px;justify-content:flex-end;margin-top:18px}
+.btn-confirm{
+  background:linear-gradient(135deg,#7030c8,#5020a0);
+  border:none;border-radius:6px;color:#fff;
+  padding:7px 18px;font-family:'Rajdhani',sans-serif;
+  font-size:13px;font-weight:700;letter-spacing:.08em;cursor:pointer;
+  transition:opacity .18s;
+}
+.btn-confirm:hover{opacity:.85}
+.btn-cancel{
+  background:var(--surf2);border:1px solid var(--border2);
+  border-radius:6px;color:var(--text2);
+  padding:7px 14px;font-family:'Rajdhani',sans-serif;
+  font-size:13px;font-weight:600;cursor:pointer;transition:border-color .18s;
+}
+.btn-cancel:hover{border-color:var(--accent);color:var(--accent)}
+
+/* chart bottom padding for labels */
+#ratingChart{ height:210px !important; }
+
 </style>
 </head>
 <body>
+<!-- Profile modal -->
+<div class="modal-overlay" id="profileModal">
+  <div class="modal-box">
+    <h3>填写存档信息</h3>
+    <div class="modal-field">
+      <label>用户名</label>
+      <input type="text" id="mName" placeholder="Player">
+    </div>
+    <div class="modal-field">
+      <label>潜力值 (PTT)</label>
+      <input type="text" id="mPtt" placeholder="13.00">
+    </div>
+    <div class="modal-actions">
+      <button class="btn-cancel" id="btnModalCancel">取消</button>
+      <button class="btn-confirm" id="btnModalOk">确认</button>
+    </div>
+  </div>
+</div>
 <div class="wrap">
 
-  <div class="player-name">
-    <span id="pName">Arcaea B30</span>
-    <span class="ptt-pill" id="pPtt">PTT —</span>
+  <div style="display:flex;align-items:flex-start;justify-content:space-between;flex-wrap:wrap;gap:10px;margin-bottom:6px">
+    <div class="player-name">
+      <span id="pName">Arcaea B30</span>
+      <span class="ptt-pill" id="pPtt">PTT —</span>
+      <span class="ptt-pill" id="pMaxPtt" style="background:linear-gradient(135deg,#204080,#102860);border-color:#4080c0;display:none">Max —</span>
+    </div>
+    <button class="btn-cancel" id="btnProfile" style="align-self:center">
+      ✎ 填写存档信息
+    </button>
   </div>
   <div class="stats-row">
     <div class="stat">B30 Avg <b id="hB30">—</b></div>
+    <div class="stat">TOP10 Avg <b id="hT10">—</b></div>
     <div class="stat">期间 <b id="hRange">—</b></div>
   </div>
 
@@ -246,7 +320,7 @@ input[type=file]{display:none}
         placeholder="封面路径前缀，如 songs/">
     </div> -->
   </div>
-
+  
   <div class="chart-wrap">
     <div class="sec-lbl">RATING HISTORY — 悬停查看当时 B30 · 移出后保持显示</div>
     <canvas id="ratingChart"></canvas>
@@ -260,20 +334,23 @@ input[type=file]{display:none}
   <div class="b30-head">
     <div class="b30-title">BEST 30</div>
     <div class="b30-date" id="b30DL"></div>
-    <div class="b30-avg">Avg <b id="b30AL">—</b></div>
+    <div class="b30-avg">B30 <b id="b30AL">—</b></div>
+    <div class="b30-avg">TOP10 <b id="b30T10">—</b></div>
   </div>
   <div class="cards-grid" id="grid">
     <div class="empty-state"><div class="ei">♪</div>请上传 CSV 文件后查看</div>
   </div>
 
 </div>
+
 <script>
 // ── state ────────────────────────────────────────
 let ratingHistory=[], playHistory=[];
 let chartData=[];
 let hoverIdx=-1;
 let shownB30=[], shownDate='';   // what's currently displayed (persist on mouseout)
-
+let songMap = {};  // id -> title_en
+let userPttSet = false;  // 用户是否手动设置过PTT
 // ── utils ────────────────────────────────────────
 const toMs = t => t < 1e12 ? t*1000 : t;
 
@@ -325,7 +402,7 @@ function imgSrc(songId,diff){
   // return diff===3 ? `./songs/${songId}/1080_3_256.jpg` : `./songs/${songId}/1080_base_256.jpg`;
   return `./songs/${songId}/1080_base_256.jpg`;
 }
-
+function songTitle(id){ return songMap[id] || id; }
 // ── CSV ──────────────────────────────────────────
 function parseRatingCSV(txt){
   return txt.trim().split('\n').slice(1).map(l=>{
@@ -390,15 +467,24 @@ function calcB30(ts) {
 
   const b30 = all.slice(0, 30);
   const avg = b30.length ? b30.reduce((s, x) => s + x.potential, 0) / b30.length : 0;
-  return { b30, avg, total: all.length };
+  const top10=b30.slice(0,10);
+  const t10avg=top10.length?top10.reduce((s,x)=>s+x.potential,0)/top10.length:0;
+  return { b30, avg, t10avg, total: all.length };
 }
 
 // ── render ───────────────────────────────────────
 function renderCards(b30,dateLabel){
   shownB30=b30; shownDate=dateLabel;
   document.getElementById('b30DL').textContent=dateLabel||'';
-  document.getElementById('b30AL').textContent=
-    b30.length?(b30.reduce((s,x)=>s+x.potential,0)/b30.length).toFixed(4):'—';
+  if(b30.length){
+    const avg=b30.reduce((s,x)=>s+x.potential,0)/b30.length;
+    const t10=b30.slice(0,10).reduce((s,x)=>s+x.potential,0)/Math.min(10,b30.length);
+    document.getElementById('b30AL').textContent=avg.toFixed(4);
+    document.getElementById('b30T10').textContent=t10.toFixed(4);
+  } else {
+    document.getElementById('b30AL').textContent='—';
+    document.getElementById('b30T10').textContent='—';
+  }
 
   const grid=document.getElementById('grid');
   if(!b30.length){
@@ -425,7 +511,7 @@ function renderCards(b30,dateLabel){
     <div class="card-r1">
       <div class="card-rank-title">
         <div class="card-no">#${i+1}</div>
-        <div class="card-title" title="${p.songId}">${p.songId}</div>
+        <div class="card-title" title="${songTitle(p.songId)}">${songTitle(p.songId)}</div>
       </div>
       <div class="card-ptt">${p.potential.toFixed(4)}</div>
     </div>
@@ -447,12 +533,20 @@ function renderCards(b30,dateLabel){
 }
 
 function showCurrentB30(){
-  const{b30,avg}=calcB30(Date.now());
+  const{b30,avg,t10avg}=calcB30(Date.now());
   renderCards(b30,'当前');
   document.getElementById('hB30').textContent=avg.toFixed(4);
+  document.getElementById('hT10').textContent=t10avg.toFixed(4);
   if(ratingHistory.length){
-    document.getElementById('pPtt').textContent=
-      'PTT '+ratingHistory[ratingHistory.length-1].rating.toFixed(2);
+    const maxPtt=ratingHistory[ratingHistory.length-1].rating.toFixed(2);
+    if(!userPttSet){
+      // 用户没有手动设置过，直接显示在主pill里
+      document.getElementById('pPtt').textContent='PTT '+maxPtt;
+    } else {
+      // 用户设置过，把csv的值显示在旁边的Max pill
+      document.getElementById('pMaxPtt').textContent='Max '+maxPtt;
+      document.getElementById('pMaxPtt').style.display='';
+    }
   }
 }
 
@@ -461,13 +555,24 @@ const canvas=document.getElementById('ratingChart');
 const ctx=canvas.getContext('2d');
 
 function resizeCanvas(){
-  canvas.width=canvas.parentElement.clientWidth-44;
-  canvas.height=190;
+  const dpr=window.devicePixelRatio||1;
+  const cssW=canvas.parentElement.clientWidth-44;
+  const cssH=210;
+  // CSS 尺寸
+  canvas.style.width=cssW+'px';
+  canvas.style.height=cssH+'px';
+  // 实际像素尺寸
+  canvas.width=Math.round(cssW*dpr);
+  canvas.height=Math.round(cssH*dpr);
+  
   drawChart();
 }
 
 function drawChart(){
-  const W=canvas.width,H=canvas.height;
+  const dpr=window.devicePixelRatio||1;
+  const W=parseInt(canvas.style.width||canvas.width);   
+  const H=parseInt(canvas.style.height||canvas.height); 
+  ctx.setTransform(dpr,0,0,dpr,0,0);
   ctx.clearRect(0,0,W,H);
   if(!chartData.length){
     ctx.fillStyle='#3a3858';ctx.font='12px Rajdhani,sans-serif';
@@ -475,7 +580,7 @@ function drawChart(){
     ctx.fillText('上传 Rating History CSV 后显示折线图',W/2,H/2);
     return;
   }
-  const P={t:14,r:14,b:30,l:50};
+  const P={t:14,r:14,b:42,l:54};
   const CW=W-P.l-P.r, CH=H-P.t-P.b;
   const vals=chartData.map(d=>d.rating);
   const mn=Math.min(...vals)-.08, mx=Math.max(...vals)+.08;
@@ -488,8 +593,8 @@ function drawChart(){
     ctx.strokeStyle='#1e2238';ctx.lineWidth=1;ctx.setLineDash([3,4]);
     ctx.beginPath();ctx.moveTo(P.l,y);ctx.lineTo(W-P.r,y);ctx.stroke();
     ctx.setLineDash([]);
-    ctx.fillStyle='#504e78';ctx.font='10px Rajdhani,sans-serif';ctx.textAlign='right';
-    ctx.fillText(v.toFixed(2),P.l-5,y+3);
+    ctx.fillStyle='#8886b8';ctx.font='bold 11px Rajdhani,sans-serif';ctx.textAlign='right';
+    ctx.fillText(v.toFixed(2),P.l-6,y+4);
   }
   // fill
   const gr=ctx.createLinearGradient(0,P.t,0,H-P.b);
@@ -515,30 +620,39 @@ function drawChart(){
     ctx.strokeStyle='rgba(255,255,255,.8)';ctx.lineWidth=1.5;ctx.stroke();
   }
   // x labels
-  const step=Math.max(1,Math.floor(chartData.length/7));
-  ctx.fillStyle='#504e78';ctx.font='10px Rajdhani,sans-serif';ctx.textAlign='center';ctx.setLineDash([]);
+  const step=Math.max(1,Math.floor(chartData.length/6));
+  ctx.fillStyle='#9896c8';ctx.font='bold 11px Rajdhani,sans-serif';ctx.textAlign='center';ctx.setLineDash([]);
+  // draw small tick
   for(let i=0;i<chartData.length;i+=step){
-    ctx.fillText(chartData[i].dateStr.split(' ')[0],xOf(i),H-P.b+13);
+    const x=xOf(i);
+    ctx.strokeStyle='#3a3860';ctx.lineWidth=1;
+    ctx.beginPath();ctx.moveTo(x,H-P.b);ctx.lineTo(x,H-P.b+4);ctx.stroke();
+    // wrap long date: split "2024/7/2" → two lines if needed
+    const parts=chartData[i].dateStr.split(' ');
+    ctx.fillText(parts[0],x,H-P.b+16);
+    if(parts[1]) ctx.fillText(parts[1],x,H-P.b+28);
   }
 }
 
 canvas.addEventListener('mousemove',function(e){
   if(!chartData.length) return;
   const rect=canvas.getBoundingClientRect();
-  const mx=(e.clientX-rect.left)*(canvas.width/rect.width);
+  const mx=e.clientX-rect.left;   
   const PL=50,PR=14;
-  const norm=(mx-PL)/(canvas.width-PL-PR);
+  const cssW=parseInt(canvas.style.width||canvas.width);  
+  const norm=(mx-PL)/(cssW-PL-PR);
   hoverIdx=Math.max(0,Math.min(chartData.length-1,Math.round(norm*(chartData.length-1))));
   drawChart();
 
   const d=chartData[hoverIdx];
   const hTs=parseDateStr(d.dateStr)||d.ts;
-  const{b30,avg}=calcB30(hTs);
+  const{b30,avg,t10avg}=calcB30(hTs);
 
   const tip=document.getElementById('cTip');
   document.getElementById('tipDate').textContent=d.dateStr;
   document.getElementById('tipPtt').textContent='PTT '+d.rating.toFixed(2);
-  document.getElementById('tipB30').textContent=`B30 ${avg.toFixed(4)}  ·  ${b30.length} 曲`;
+  document.getElementById('tipB30').textContent=
+    `B30 ${avg.toFixed(4)}  ·  T10 ${t10avg.toFixed(4)}  ·  ${b30.length} 曲`;
   tip.style.display='block';
   let tx=e.clientX-rect.left+14;
   let ty=e.clientY-rect.top-10;
@@ -589,11 +703,57 @@ document.getElementById('f2').addEventListener('change',function(e){
   r.readAsText(f);
 });
 
-// re-render when img path changes
-document.getElementById('imgBase').addEventListener('change',function(){
-  if(shownB30.length) renderCards(shownB30,shownDate);
-});
+// ── songlist loader ───────────────────────────────
+async function loadSonglist(){
+  const paths=['./src/songlist','./src/songlist.json','./songlist','./songlist.json'];
+  for(const path of paths){
+    try{
+      const res=await fetch(path);
+      if(!res.ok) continue;
+      const text=await res.text();
+      const data=JSON.parse(text);
+      songMap={};
+      for(const s of data.songs||[]){
+        songMap[s.id]=(s.title_localized?.en)||s.id;
+      }
+      console.log('[Songlist] loaded',Object.keys(songMap).length,'songs from',path);
+      if(shownB30.length) renderCards(shownB30,shownDate);
+      return;
+    }catch(err){
+      console.warn('[Songlist] failed at',path,err.message);
+    }
+  }
+  console.error('[Songlist] all paths failed');
+}
+loadSonglist();
 
+// ── profile modal ─────────────────────────────────
+document.getElementById('btnProfile').addEventListener('click',()=>{
+  document.getElementById('profileModal').classList.add('open');
+});
+document.getElementById('btnModalCancel').addEventListener('click',()=>{
+  document.getElementById('profileModal').classList.remove('open');
+});
+document.getElementById('btnModalOk').addEventListener('click',()=>{
+  const name=document.getElementById('mName').value.trim();
+  const ptt=document.getElementById('mPtt').value.trim();
+  if(name) document.getElementById('pName').textContent=name;
+  if(ptt&&!isNaN(parseFloat(ptt))){
+    document.getElementById('pPtt').textContent='PTT '+parseFloat(ptt).toFixed(2);
+    userPttSet=true;
+    // 如果csv已经加载了，立刻把Max显示出来
+    if(ratingHistory.length){
+      const maxPtt=ratingHistory[ratingHistory.length-1].rating.toFixed(2);
+      document.getElementById('pMaxPtt').textContent='Max '+maxPtt;
+      document.getElementById('pMaxPtt').style.display='';
+    }
+  }
+  document.getElementById('profileModal').classList.remove('open');
+});
+// close on backdrop click
+document.getElementById('profileModal').addEventListener('click',function(e){
+  if(e.target===this) this.classList.remove('open');
+});
 window.addEventListener('resize',resizeCanvas);
 setTimeout(resizeCanvas,60);
 </script>
