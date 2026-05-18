@@ -528,12 +528,25 @@ function clearCls(ct){
   return {lbl:'',cls:''};
 }
 
-function imgSrc(songId,diff){
-  // const base=(document.getElementById('imgBase').value||'').replace(/\/$/,'');
-  // const pre=base?base+'/':'';
-  // return diff===3 ? `./songs/${songId}/1080_3_256.jpg` : `./songs/${songId}/1080_base_256.jpg`;
-  return `./songs/${songId}/1080_base_256.jpg`;
+function imgSrc(songId, diff) {
+    return new Promise((resolve, reject) => {
+        const baseUrl = `./src/songs/${songId}/`;
+        const primaryImg = diff === 3 ? `${baseUrl}1080_3_256.jpg` : `${baseUrl}1080_base_256.jpg`;
+        const fallbackImg = `${baseUrl}base_256.jpg`;
+        
+        const img = new Image();
+        img.onload = () => resolve(primaryImg);
+        img.onerror = () => {
+            // 主图不存在，尝试备用图
+            const fallback = new Image();
+            fallback.onload = () => resolve(fallbackImg);
+            fallback.onerror = () => resolve(primaryImg); // 都不存在则返回原路径
+            fallback.src = fallbackImg;
+        };
+        img.src = primaryImg;
+    });
 }
+
 function songTitle(id) {
     var title = songMap[id] || id;
     return title.length > 17 ? title.substring(0, 15) + '...' : title;
