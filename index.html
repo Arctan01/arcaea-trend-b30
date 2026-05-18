@@ -5,8 +5,28 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Arcaea B30 Viewer</title>
 <style>
-@import url('https://fonts.googleapis.com/css2?family=Exo+2:ital,wght@0,300;0,400;0,600;0,700;0,900;1,400&family=Rajdhani:wght@400;500;600;700&display=swap');
-
+/* @import url('https://fonts.googleapis.com/css2?family=Exo+2:ital,wght@0,300;0,400;0,600;0,700;0,900;1,400&family=Rajdhani:wght@400;500;600;700&display=swap'); */
+@font-face {
+  font-family: 'Exo-Regular';
+  src: url('./src/Fonts/Exo-Regular.ttf') format('truetype');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'GeosansLight';
+  src: url('./src/Fonts/GeosansLight.ttf') format('truetype');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'L2-Regular';
+  src: url('./src/Fonts/L2-Regular.ttf') format('truetype');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
 :root {
   --bg:      #0b0c18;
   --bg2:     #10121f;
@@ -52,7 +72,7 @@
 body{
   background:var(--bg);
   color:var(--text);
-  font-family:'Exo 2',sans-serif;
+  font-family:'GeosansLight',sans-serif;
   min-height:100vh;
   overflow-x:hidden;
 }
@@ -69,38 +89,38 @@ body::before{
 
 /* header */
 .player-name{font-size:24px;font-weight:900;letter-spacing:.04em;display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:6px}
-.ptt-pill{background:linear-gradient(135deg,#7030c8,#5020a0);border:1px solid #a060ff;border-radius:6px;padding:2px 10px 3px;font-size:13px;font-family:'Rajdhani',sans-serif;font-weight:700;letter-spacing:.1em;color:#fff}
+.ptt-pill{background:linear-gradient(135deg,#7030c8,#5020a0);border:1px solid #a060ff;border-radius:6px;padding:2px 10px 3px;font-size:13px;font-family:'Exo-Regular',sans-serif;font-weight:700;letter-spacing:.1em;color:#fff}
 .stats-row{display:flex;gap:20px;flex-wrap:wrap;margin-bottom:22px}
-.stat{font-family:'Rajdhani',sans-serif;font-size:12px;color:var(--text3);letter-spacing:.06em}
+.stat{font-family:'Exo-Regular',sans-serif;font-size:12px;color:var(--text3);letter-spacing:.06em}
 .stat b{color:var(--accent);font-weight:700}
 
 /* upload */
 .upload-bar{display:flex;gap:12px;flex-wrap:wrap;background:var(--surface);border:1px dashed var(--border2);border-radius:10px;padding:14px 18px;margin-bottom:20px;align-items:center}
 .upload-group{display:flex;align-items:center;gap:8px;flex:1;min-width:200px}
-.upload-tag{font-family:'Rajdhani',sans-serif;font-size:11px;font-weight:700;letter-spacing:.12em;color:var(--text3);white-space:nowrap}
-.upload-btn{background:var(--surf2);border:1px solid var(--border2);border-radius:5px;color:var(--text2);padding:5px 12px;font-family:'Rajdhani',sans-serif;font-size:12px;font-weight:600;cursor:pointer;transition:border-color .18s,color .18s;white-space:nowrap}
+.upload-tag{font-family:'Exo-Regular',sans-serif;font-size:11px;font-weight:700;letter-spacing:.12em;color:var(--text3);white-space:nowrap}
+.upload-btn{background:var(--surf2);border:1px solid var(--border2);border-radius:5px;color:var(--text2);padding:5px 12px;font-family:'Exo-Regular',sans-serif;font-size:12px;font-weight:600;cursor:pointer;transition:border-color .18s,color .18s;white-space:nowrap}
 .upload-btn:hover{border-color:var(--accent);color:var(--accent)}
 input[type=file]{display:none}
-.fstat{font-size:11px;color:var(--text3);font-family:'Rajdhani',sans-serif}
+.fstat{font-size:11px;color:var(--text3);font-family:'Exo-Regular',sans-serif}
 .fstat.ok{color:var(--green)}
-.img-path-input{background:var(--surf2);border:1px solid var(--border2);border-radius:5px;color:var(--text2);padding:5px 10px;font-family:'Rajdhani',sans-serif;font-size:12px;outline:none;flex:1;transition:border-color .18s;min-width:120px}
+.img-path-input{background:var(--surf2);border:1px solid var(--border2);border-radius:5px;color:var(--text2);padding:5px 10px;font-family:'Exo-Regular',sans-serif;font-size:12px;outline:none;flex:1;transition:border-color .18s;min-width:120px}
 .img-path-input:focus{border-color:var(--accent)}
 .img-path-input::placeholder{color:var(--text3)}
 
 /* chart */
 .chart-wrap{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:20px 22px 16px;margin-bottom:20px;position:relative}
-.sec-lbl{font-family:'Rajdhani',sans-serif;font-size:10px;font-weight:700;letter-spacing:.18em;color:var(--text3);text-transform:uppercase;margin-bottom:12px}
+.sec-lbl{font-family:'Exo-Regular',sans-serif;font-size:10px;font-weight:700;letter-spacing:.18em;color:var(--text3);text-transform:uppercase;margin-bottom:12px}
 #ratingChart{width:100%;height:190px;cursor:crosshair;display:block}
-.c-tip{position:absolute;background:var(--bg3);border:1px solid rgba(200,160,255,.5);border-radius:8px;padding:8px 14px;font-family:'Rajdhani',sans-serif;pointer-events:none;display:none;z-index:50;min-width:190px;box-shadow:0 6px 24px rgba(0,0,0,.55)}
+.c-tip{position:absolute;background:var(--bg3);border:1px solid rgba(200,160,255,.5);border-radius:8px;padding:8px 14px;font-family:'Exo-Regular',sans-serif;pointer-events:none;display:none;z-index:50;min-width:190px;box-shadow:0 6px 24px rgba(0,0,0,.55)}
 .ct-date{font-size:11px;color:var(--text2);margin-bottom:3px}
 .ct-ptt{font-size:18px;font-weight:700;color:var(--accent);letter-spacing:.04em}
 .ct-b30{font-size:11px;color:var(--text3);margin-top:2px}
 
 /* b30 head */
 .b30-head{display:flex;align-items:baseline;gap:10px;margin-bottom:10px;flex-wrap:wrap}
-.b30-title{font-family:'Rajdhani',sans-serif;font-size:10px;font-weight:700;letter-spacing:.18em;color:var(--text3);text-transform:uppercase}
-.b30-date{font-family:'Rajdhani',sans-serif;font-size:13px;font-weight:600;color:var(--accent2);letter-spacing:.04em}
-.b30-avg{font-family:'Rajdhani',sans-serif;font-size:13px;color:var(--text2)}
+.b30-title{font-family:'Exo-Regular',sans-serif;font-size:10px;font-weight:700;letter-spacing:.18em;color:var(--text3);text-transform:uppercase}
+.b30-date{font-family:'Exo-Regular',sans-serif;font-size:13px;font-weight:600;color:var(--accent2);letter-spacing:.04em}
+.b30-avg{font-family:'Exo-Regular',sans-serif;font-size:13px;color:var(--text2)}
 .b30-avg b{color:var(--accent)}
 
 /* 3-column grid */
@@ -152,40 +172,40 @@ input[type=file]{display:none}
   gap: 5px;
 }
 .card-no {
-  font-family: 'Rajdhani', sans-serif;
+  font-family: 'Exo-Regular', sans-serif;
   font-size: 17px;
   font-weight: 700;
   color: var(--text3);
   letter-spacing: .06em;
 }
-.card-title{font-family: 'Rajdhani', sans-serif;font-size:17px;font-weight:700;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.card-title{font-family: 'L2-Regular', sans-serif;font-size:15px;font-weight:700;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 
 /* .card-diff{
-  font-family:'Rajdhani',sans-serif;font-size:9px;font-weight:700;
+  font-family:'Exo-Regular',sans-serif;font-size:9px;font-weight:700;
   letter-spacing:.1em;padding:1px 4px;border-radius:3px;
   background:var(--c-bg,var(--surf2));
   color:var(--c-main,var(--text2));
   border:1px solid color-mix(in srgb,var(--c-main,var(--border)) 50%,transparent);
 } */
 .card-ptt{
-  font-family:'Rajdhani',sans-serif;font-size:17px;font-weight:700;
+  font-family:'Exo-Regular',sans-serif;font-size:16px;font-weight:700;
   color:var(--c-main,var(--accent));letter-spacing:.02em;white-space:nowrap;
 }
 
 
 .card-r3{display:flex;align-items:center;justify-content:space-between;gap:4px}
-.card-score{font-family:'Rajdhani',sans-serif;font-size:25px;font-weight:600;color:var(--text2);letter-spacing:.04em}
+.card-score{font-family:'Exo-Regular',sans-serif;font-size:23px;font-weight:600;color:var(--text2);letter-spacing:.04em}
 .card-clear{
   position: absolute;
-  left: 140px;          
-  font-family: 'Rajdhani', sans-serif;
-  font-size: 25px;
+  left: 147px;          
+  font-family: 'Exo-Regular', sans-serif;
+  font-size: 22px;
   font-weight: 700;
   text-transform: uppercase;
   color: var(--text3);
 }
 .card-const{
-  font-family:'Rajdhani',sans-serif;font-size:13px;font-weight:700;
+  font-family:'Exo-Regular',sans-serif;font-size:13px;font-weight:700;
   padding:1px 5px;border-radius:3px;
   background:var(--c-bg,var(--surf2));
   color:var(--c-main,var(--text2));
@@ -193,12 +213,12 @@ input[type=file]{display:none}
 }
 
 .card-pfl{display:flex;gap:6px}
-.pfl-item{font-family:'Rajdhani',sans-serif;font-size:14px;color:var(--text3);letter-spacing:.02em}
+.pfl-item{font-family:'Exo-Regular',sans-serif;font-size:12px;color:var(--text3);letter-spacing:.02em}
 .pfl-item b{color:var(--text2)}
 
-.p-item{font-family:'Rajdhani',sans-serif;font-size:14px;color:var(--p_color);letter-spacing:.02em}
-.f-item{font-family:'Rajdhani',sans-serif;font-size:14px;color:var(--f_color);letter-spacing:.02em}
-.l-item{font-family:'Rajdhani',sans-serif;font-size:14px;color:var(--l_color);letter-spacing:.02em}
+.p-item{font-family:'Exo-Regular',sans-serif;font-size:12px;color:var(--p_color);letter-spacing:.02em}
+.f-item{font-family:'Exo-Regular',sans-serif;font-size:12px;color:var(--f_color);letter-spacing:.02em}
+.l-item{font-family:'Exo-Regular',sans-serif;font-size:12px;color:var(--l_color);letter-spacing:.02em}
 
 .card-clear.pm{color:var(--pm_color)}
 .card-clear.fr{color:var(--fr_color)}
@@ -206,12 +226,12 @@ input[type=file]{display:none}
 .card-clear.hc{color:var(--hc_color)}
 .card-clear.tl{color:var(--tl_color)} */
 .card-date{
-  position:absolute;right:9px;bottom:2px;
-  font-family:'Rajdhani',sans-serif;font-size:14px;font-weight:700;
+  position:absolute;right:9px;bottom:4px;
+  font-family:'Exo-Regular',sans-serif;font-size:12px;font-weight:700;
   text-transform:uppercase;color:var(--text3);
 }
 /* empty */
-.empty-state{grid-column:1/-1;text-align:center;padding:50px 20px;color:var(--text3);font-family:'Rajdhani',sans-serif;font-size:14px;letter-spacing:.1em}
+.empty-state{grid-column:1/-1;text-align:center;padding:50px 20px;color:var(--text3);font-family:'Exo-Regular',sans-serif;font-size:14px;letter-spacing:.1em}
 .ei{font-size:36px;margin-bottom:10px;opacity:.3}
 
 /* ── modal overlay ── */
@@ -227,18 +247,18 @@ input[type=file]{display:none}
   box-shadow:0 12px 48px rgba(0,0,0,.7);
 }
 .modal-box h3{
-  font-family:'Rajdhani',sans-serif;font-size:13px;font-weight:700;
+  font-family:'Exo-Regular',sans-serif;font-size:13px;font-weight:700;
   letter-spacing:.15em;color:var(--text3);text-transform:uppercase;margin-bottom:16px;
 }
 .modal-field{margin-bottom:14px}
 .modal-field label{
-  display:block;font-family:'Rajdhani',sans-serif;font-size:11px;
+  display:block;font-family:'Exo-Regular',sans-serif;font-size:11px;
   font-weight:700;letter-spacing:.1em;color:var(--text2);margin-bottom:6px;
 }
 .modal-field input{
   width:100%;background:var(--surf2);border:1px solid var(--border2);
   border-radius:6px;color:var(--text);padding:7px 12px;
-  font-family:'Rajdhani',sans-serif;font-size:14px;outline:none;
+  font-family:'Exo-Regular',sans-serif;font-size:14px;outline:none;
   transition:border-color .18s;
 }
 .modal-field input:focus{border-color:var(--accent)}
@@ -246,7 +266,7 @@ input[type=file]{display:none}
 .btn-confirm{
   background:linear-gradient(135deg,#7030c8,#5020a0);
   border:none;border-radius:6px;color:#fff;
-  padding:7px 18px;font-family:'Rajdhani',sans-serif;
+  padding:7px 18px;font-family:'Exo-Regular',sans-serif;
   font-size:13px;font-weight:700;letter-spacing:.08em;cursor:pointer;
   transition:opacity .18s;
 }
@@ -254,7 +274,7 @@ input[type=file]{display:none}
 .btn-cancel{
   background:var(--surf2);border:1px solid var(--border2);
   border-radius:6px;color:var(--text2);
-  padding:7px 14px;font-family:'Rajdhani',sans-serif;
+  padding:7px 14px;font-family:'Exo-Regular',sans-serif;
   font-size:13px;font-weight:600;cursor:pointer;transition:border-color .18s;
 }
 .btn-cancel:hover{border-color:var(--accent);color:var(--accent)}
@@ -262,6 +282,64 @@ input[type=file]{display:none}
 /* chart bottom padding for labels */
 #ratingChart{ height:210px !important; }
 
+.settings-wrap{
+  background:var(--surface);border:1px solid var(--border);
+  border-radius:10px;margin-bottom:20px;overflow:hidden;
+}
+.settings-header{
+  display:flex;align-items:center;justify-content:space-between;
+  padding:10px 16px;cursor:pointer;user-select:none;
+  font-family:'Exo-Regular',sans-serif;font-size:11px;font-weight:700;
+  letter-spacing:.15em;color:var(--text3);text-transform:uppercase;
+}
+.settings-header:hover{color:var(--text2)}
+.settings-header .chevron{
+  font-size:10px;transition:transform .2s;display:inline-block;
+}
+.settings-header.open .chevron{transform:rotate(180deg)}
+.settings-body{
+  display:none;padding:12px 16px 16px;
+  border-top:1px solid var(--border);
+  display:none;gap:24px;flex-wrap:wrap;
+}
+.settings-body.open{display:flex}
+.setting-item{
+  display:flex;align-items:center;gap:10px;
+}
+.setting-label{
+  font-family:'Exo-Regular',sans-serif;font-size:12px;
+  font-weight:600;color:var(--text2);letter-spacing:.06em;
+}
+/* toggle switch */
+.toggle{position:relative;width:36px;height:20px;flex-shrink:0}
+.toggle input{opacity:0;width:0;height:0;position:absolute}
+.toggle-track{
+  position:absolute;inset:0;background:var(--surf2);
+  border:1px solid var(--border2);border-radius:10px;
+  transition:background .2s,border-color .2s;cursor:pointer;
+}
+.toggle input:checked+.toggle-track{background:var(--ftr);border-color:var(--ftr-light)}
+.toggle-thumb{
+  position:absolute;top:3px;left:3px;
+  width:12px;height:12px;border-radius:50%;
+  background:#fff;transition:transform .2s;pointer-events:none;
+}
+.toggle input:checked~.toggle-thumb{transform:translateX(16px)}
+/* segmented control */
+.seg-ctrl{
+  display:flex;border:1px solid var(--border2);
+  border-radius:6px;overflow:hidden;
+}
+.seg-ctrl label{
+  font-family:'Exo-Regular',sans-serif;font-size:11px;font-weight:600;
+  letter-spacing:.06em;padding:4px 10px;cursor:pointer;
+  color:var(--text3);background:var(--surf2);
+  transition:background .15s,color .15s;white-space:nowrap;
+}
+.seg-ctrl input{display:none}
+.seg-ctrl input:checked+label{
+  background:var(--ftr);color:#fff;
+}
 </style>
 </head>
 <body>
@@ -320,7 +398,43 @@ input[type=file]{display:none}
         placeholder="封面路径前缀，如 songs/">
     </div> -->
   </div>
-  
+    <div class="settings-wrap">
+    <div class="settings-header" id="settingsHeader">
+      ⚙ 显示设置 <span class="chevron">▼</span>
+    </div>
+    <div class="settings-body" id="settingsBody">
+      <div class="setting-item">
+        <div class="setting-label">显示 LS</div>
+        <label class="toggle">
+          <input type="checkbox" id="togLS" checked>
+          <div class="toggle-track"></div>
+          <div class="toggle-thumb"></div>
+        </label>
+      </div>
+      <div class="setting-item">
+        <div class="setting-label">MaxPure 样式</div>
+        <div class="seg-ctrl">
+          <input type="radio" name="mpStyle" id="mpPlus" value="plus" checked>
+          <label for="mpPlus">(+maxPure)</label>
+          <input type="radio" name="mpStyle" id="mpMinus" value="minus">
+          <label for="mpMinus">(−pure−maxPure)</label>
+        </div>
+      </div>
+      <div class="setting-item">
+        <div class="setting-label">排行模式</div>
+        <div class="seg-ctrl" id="filterCtrl">
+          <input type="radio" name="rankFilter" id="rfB30"  value="b30"  checked>
+          <label for="rfB30">B30</label>
+          <input type="radio" name="rankFilter" id="rfP30"  value="p30">
+          <label for="rfP30">P30</label>
+          <input type="radio" name="rankFilter" id="rfLS0"  value="ls0">
+          <label for="rfLS0">LS0·30</label>
+          <input type="radio" name="rankFilter" id="rfMax"  value="max">
+          <label for="rfMax">MAX·30</label>
+        </div>
+      </div>
+    </div>
+  </div>
   <div class="chart-wrap">
     <div class="sec-lbl">RATING HISTORY — 悬停查看当时 B30 · 移出后保持显示</div>
     <canvas id="ratingChart"></canvas>
@@ -332,7 +446,7 @@ input[type=file]{display:none}
   </div>
 
   <div class="b30-head">
-    <div class="b30-title">BEST 30</div>
+    <div class="b30-title" id="b30Title">BEST 30</div>
     <div class="b30-date" id="b30DL"></div>
     <div class="b30-avg">Max <b id="b30mx">—</b></div>
     <div class="b30-avg">B30 Avg <b id="b30AL">—</b></div>
@@ -352,6 +466,23 @@ let hoverIdx=-1;
 let shownB30=[], shownDate='';   // what's currently displayed (persist on mouseout)
 let songMap = {};  // id -> title_en
 let userPttSet = false;  // 用户是否手动设置过PTT
+// ── filters ──────────────────────────────────────
+const FILTERS = {
+  b30:  null,                                           // 无过滤，取全部最佳
+  p30:  p => p.far === 0 && p.lost === 0,               // Pure Memory 候选
+  ls0:  p => p.ls === 0,                                // LS 为 0
+  max:  p => p.pure === p.maxPure,                      // Pure == MaxPure
+};
+
+const FILTER_LABELS = {
+  b30: 'B30', p30: 'P30', ls0: 'LS0·30', max: 'MAX·30',
+};
+
+let settings = {
+  filter: 'b30',        // 当前选中的 filter key
+  showLS: true,
+  maxPureStyle: 'plus', // 'plus' | 'minus'
+};
 // ── utils ────────────────────────────────────────
 const toMs = t => t < 1e12 ? t*1000 : t;
 
@@ -405,7 +536,7 @@ function imgSrc(songId,diff){
 }
 function songTitle(id) {
     var title = songMap[id] || id;
-    return title.length > 17 ? title.substring(0, 14) + '...' : title;
+    return title.length > 17 ? title.substring(0, 15) + '...' : title;
 }
 // ── CSV ──────────────────────────────────────────
 function parseRatingCSV(txt){
@@ -413,7 +544,7 @@ function parseRatingCSV(txt){
     const p=l.split(',');
     if(p.length<3) return null;
     const ts=toMs(parseInt(p[0].trim()));
-    const dateStr=p[1].trim();
+    const dateStr=p[1].trim().slice(1, -1);
     const rating=parseFloat(p[2].trim());
     return isNaN(ts)||isNaN(rating)?null:{ts,dateStr,rating};
   }).filter(Boolean).sort((a,b)=>a.ts-b.ts);
@@ -421,64 +552,69 @@ function parseRatingCSV(txt){
 
 function parsePlayCSV(txt){
   return txt.trim().split('\n').slice(1).map(l=>{
-    const p=l.split(',');
-    if(p.length<11) return null;
-    const ts=toMs(parseInt((p[10]||'').trim()));
-    const constant=parseFloat((p[3]||'').trim());
-    const potential=parseFloat((p[4]||'').trim());
-    const score=parseInt((p[2]||'').trim());
+    // 处理带引号的字段（DateTime列有引号）
+    const p=l.match(/(".*?"|[^,]+|(?<=,)(?=,)|^(?=,)|(?<=,)$)/g)||l.split(',');
+    const clean=p.map(x=>x.replace(/^"|"$/g,'').trim());
+    if(clean.length<12) return null;
+    // SongId,Difficulty,Score,Constant,Potential,LS,MaxPure,Pure,Far,Lost,ClearType,Timestamp,DateTime
+    const ts=toMs(parseInt(clean[11]));
+    const constant=parseFloat(clean[3]);
+    const potential=parseFloat(clean[4]);
+    const score=parseInt(clean[2]);
     if(isNaN(ts)||isNaN(constant)||isNaN(potential)) return null;
     return{
-      songId:(p[0]||'').trim(),
-      diff:parseInt((p[1]||'0').trim()),
+      songId:clean[0],
+      diff:parseInt(clean[1]||'0'),
       score,constant,potential,
-      maxPure:parseInt((p[5]||'0').trim()),
-      pure:parseInt((p[6]||'0').trim()),
-      far:parseInt((p[7]||'0').trim()),
-      lost:parseInt((p[8]||'0').trim()),
-      clearType:parseInt((p[9]||'0').trim()),
+      ls:parseFloat(clean[5])||0,
+      maxPure:parseInt(clean[6])||0,
+      pure:parseInt(clean[7])||0,
+      far:parseInt(clean[8])||0,
+      lost:parseInt(clean[9])||0,
+      clearType:parseInt(clean[10])||0,
       ts,
-      dateStr:(p[11]||'').trim(),
+      dateStr:clean[12]||'',
     };
   }).filter(Boolean);
 }
 
 // ── B30 calc ─────────────────────────────────────
-function calcB30(ts) {
-  const best = new Map();
-  const EPSILON = 0.000001; // 统一容差值
-
-  for (const p of playHistory) {
-    if (p.ts > ts) continue;
-    
-    const k = p.songId + '_' + p.diff;
-    const existing = best.get(k);
-    
-    // 关键修复：当 potential 相等时，用更高分的记录覆盖
-    if (!existing || 
-        p.potential > existing.potential + EPSILON || 
-        (Math.abs(p.potential - existing.potential) <= EPSILON && p.score > existing.score)) {
-      best.set(k, p);
+function calcBest30(ts, filter=null){
+  const EPSILON=0.000001;
+  const best=new Map();
+  for(const p of playHistory){
+    if(p.ts>ts) continue;
+    const k=p.songId+'_'+p.diff;
+    const existing=best.get(k);
+    if(!existing||
+       p.potential>existing.potential+EPSILON||
+       (Math.abs(p.potential-existing.potential)<=EPSILON&&p.score>existing.score)){
+      best.set(k,p);
     }
   }
-
-  // 排序逻辑：先按 potential 降序，相等时按 score 降序
-  const all = [...best.values()].sort((a, b) => {
-    const diff = b.potential - a.potential;
-    if (Math.abs(diff) > EPSILON) return diff; // potential 不等时直接比较
-    return b.score - a.score; // potential 相等时按 score 降序
-  });
-
-  const b30 = all.slice(0, 30);
-  const avg = b30.length ? b30.reduce((s, x) => s + x.potential, 0) / b30.length : 0;
-  const top10=b30.slice(0,10);
+  // filter 在选出每首最佳成绩之后再应用
+  const all=[...best.values()]
+    .filter(p=>filter?filter(p):true)
+    .sort((a,b)=>{
+      const d=b.potential-a.potential;
+      return Math.abs(d)>EPSILON?d:b.score-a.score;
+    });
+  const top=all.slice(0,30);
+  const avg=top.length?top.reduce((s,x)=>s+x.potential,0)/top.length:0;
+  const top10=top.slice(0,10);
   const t10avg=top10.length?top10.reduce((s,x)=>s+x.potential,0)/top10.length:0;
-  return { b30, avg, t10avg, total: all.length };
+  return{b30:top,avg,t10avg,total:all.length};
+}
+
+// 便捷包装：用当前 settings.filter
+function calcB30(ts){
+  return calcBest30(ts, FILTERS[settings.filter]);
 }
 
 // ── render ───────────────────────────────────────
 function renderCards(b30,dateLabel){
   shownB30=b30; shownDate=dateLabel;
+  document.getElementById('b30Title').textContent=FILTER_LABELS[settings.filter]||'BEST 30';
   document.getElementById('b30DL').textContent=dateLabel||'';
   if(b30.length){
     const avg=b30.reduce((s,x)=>s+x.potential,0)/b30.length;
@@ -529,9 +665,14 @@ function renderCards(b30,dateLabel){
       <div class="card-const">${p.constant.toFixed(1)}</div>
     </div>
     <div class="card-pfl">
-      <div class="p-item">P/<b>${p.pure}</b> (+<b>${p.maxPure}</b>) </div>
+      <div class="p-item">P/<b>${p.pure}</b>${
+        settings.maxPureStyle==='plus'
+          ? ` (+<b>${p.maxPure}</b>)`
+          : ` (-<b>${p.pure-p.maxPure}</b>)`
+      }</div>
       <div class="f-item">F/<b>${p.far}</b></div>
       <div class="l-item">L/<b>${p.lost}</b></div>
+      ${settings.showLS ? `<div class="pfl-item" style="color:var(--accent2)">LS/<b style="color:var(--accent2)">${p.ls.toFixed(1)}</b></div>` : ''}
     </div>
     <div class="card-date">${calculateDaysSince(p.ts)}d</div>
   </div>
@@ -582,7 +723,7 @@ function drawChart(){
   ctx.setTransform(dpr,0,0,dpr,0,0);
   ctx.clearRect(0,0,W,H);
   if(!chartData.length){
-    ctx.fillStyle='#3a3858';ctx.font='12px Rajdhani,sans-serif';
+    ctx.fillStyle='#3a3858';ctx.font='12px Exo-Regular,sans-serif';
     ctx.textAlign='center';
     ctx.fillText('上传 Rating History CSV 后显示折线图',W/2,H/2);
     return;
@@ -600,7 +741,7 @@ function drawChart(){
     ctx.strokeStyle='#1e2238';ctx.lineWidth=1;ctx.setLineDash([3,4]);
     ctx.beginPath();ctx.moveTo(P.l,y);ctx.lineTo(W-P.r,y);ctx.stroke();
     ctx.setLineDash([]);
-    ctx.fillStyle='#8886b8';ctx.font='bold 11px Rajdhani,sans-serif';ctx.textAlign='right';
+    ctx.fillStyle='#8886b8';ctx.font='bold 11px Exo-Regular,sans-serif';ctx.textAlign='right';
     ctx.fillText(v.toFixed(2),P.l-6,y+4);
   }
   // fill
@@ -628,7 +769,7 @@ function drawChart(){
   }
   // x labels
   const step=Math.max(1,Math.floor(chartData.length/6));
-  ctx.fillStyle='#9896c8';ctx.font='bold 11px Rajdhani,sans-serif';ctx.textAlign='center';ctx.setLineDash([]);
+  ctx.fillStyle='#9896c8';ctx.font='bold 11px Exo-Regular,sans-serif';ctx.textAlign='center';ctx.setLineDash([]);
   // draw small tick
   for(let i=0;i<chartData.length;i+=step){
     const x=xOf(i);
@@ -641,7 +782,7 @@ function drawChart(){
   }
 }
 
-canvas.addEventListener('mousemove',function(e){
+canvas.addEventListener('mousemove',throttle(function(e){
   if(!chartData.length) return;
   const rect=canvas.getBoundingClientRect();
   const mx=e.clientX-rect.left;   
@@ -669,8 +810,16 @@ canvas.addEventListener('mousemove',function(e){
 
   // update cards — this becomes the new "last shown"
   renderCards(b30,d.dateStr);
-});
-
+}, 32));
+function throttle(fn, ms){
+  let last=0;
+  return function(...args){
+    const now=Date.now();
+    if(now-last<ms) return;
+    last=now;
+    fn.apply(this,args);
+  };
+}
 canvas.addEventListener('mouseleave',function(){
   hoverIdx=-1;
   drawChart();
@@ -712,7 +861,7 @@ document.getElementById('f2').addEventListener('change',function(e){
 
 // ── songlist loader ───────────────────────────────
 async function loadSonglist(){
-  const paths=['./src/songlist','./src/songlist.json','./songlist','./songlist.json'];
+  const paths=['./src/songs/songlist','./src/songs/songlist.json','./src/songlist','./src/songlist.json'];
   for(const path of paths){
     try{
       const res=await fetch(path);
@@ -760,6 +909,35 @@ document.getElementById('btnModalOk').addEventListener('click',()=>{
 // close on backdrop click
 document.getElementById('profileModal').addEventListener('click',function(e){
   if(e.target===this) this.classList.remove('open');
+});
+document.getElementById('settingsHeader').addEventListener('click',function(){
+  this.classList.toggle('open');
+  document.getElementById('settingsBody').classList.toggle('open');
+});
+
+document.getElementById('togLS').addEventListener('change',function(){
+  settings.showLS=this.checked;
+  if(shownB30.length) renderCards(shownB30,shownDate);
+});
+
+document.querySelectorAll('input[name="mpStyle"]').forEach(r=>{
+  r.addEventListener('change',function(){
+    settings.maxPureStyle=this.value;
+    if(shownB30.length) renderCards(shownB30,shownDate);
+  });
+});
+document.querySelectorAll('input[name="rankFilter"]').forEach(r=>{
+  r.addEventListener('change',function(){
+    settings.filter=this.value;
+    // 重新计算并渲染
+    const ts=shownDate&&shownDate!=='当前'
+      ?parseDateStr(shownDate)||Date.now()
+      :Date.now();
+    const{b30,avg,t10avg}=calcB30(ts);
+    renderCards(b30,shownDate||'当前');
+    document.getElementById('hB30').textContent=avg.toFixed(4);
+    document.getElementById('hT10').textContent=t10avg.toFixed(4);
+  });
 });
 window.addEventListener('resize',resizeCanvas);
 setTimeout(resizeCanvas,60);
