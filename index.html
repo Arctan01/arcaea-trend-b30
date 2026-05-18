@@ -45,13 +45,15 @@
   --text3:   #525080;
   --pm_color:    #2580A0;
   --fr_color:  #773481;
-  --hc_color:  #C72F5B;
+  --hc_color:  #9a3753;
   --nc_color:  #774271;
-  --tl_color:  #C34C6F;
+  --tl_color:  #992b4c;
   --p_color:   #C534A2;
   --f_color:   #EBB69D;
   --l_color:  #a94658;
-
+  --date_color: #8d9da4;
+  --ls_color:   #504d8d;
+  --no_color:  #acaefb;
 
   --byd:       #e84060;
   --byd-light: #ff7090;
@@ -61,10 +63,13 @@
   --ftr-bg:    rgba(160,80,240,0.13);
   --etr:       #8A7AA5;
   --etr-light: #A592C6;
-  --etr-bg:    rgba(64,160,232,0.12);
-  --pst:       #50d890;
-  --pst-light: #80ffb8;
-  --pst-bg:    rgba(80,216,144,0.10);
+  --etr-bg:    rgba(203, 167, 247, 0.12);
+  --pst:       #4BACCF;
+  --pst-light: #35b8e8;
+  --pst-bg:    rgba(39, 172, 255, 0.1);
+  --prs:       #50d890;
+  --prs-light: #80ffb8;
+  --prs-bg:    rgba(80,216,144,0.10);
 }
 
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
@@ -175,7 +180,7 @@ input[type=file]{display:none}
   font-family: 'Exo-Regular', sans-serif;
   font-size: 17px;
   font-weight: 700;
-  color: var(--text3);
+  color: var(--no_color);
   letter-spacing: .06em;
 }
 .card-title{font-family: 'L2-Regular', sans-serif;font-size:15px;font-weight:700;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
@@ -194,7 +199,16 @@ input[type=file]{display:none}
 
 
 .card-r3{display:flex;align-items:center;justify-content:space-between;gap:4px}
-.card-score{font-family:'Exo-Regular',sans-serif;font-size:23px;font-weight:600;color:var(--text2);letter-spacing:.04em}
+.card-score{
+  font-family:'Exo-Regular',sans-serif;
+  font-size:23px;
+  font-weight:600;
+  color:var(--text2);
+    text-shadow:
+    0 0 2px rgba(152,150,200,0.8),
+    0 0 1px rgba(152,150,200,0.6);
+  letter-spacing:.04em
+}
 .card-clear{
   position: absolute;
   left: 147px;          
@@ -204,6 +218,7 @@ input[type=file]{display:none}
   text-transform: uppercase;
   color: var(--text3);
 }
+
 .card-const{
   font-family:'Exo-Regular',sans-serif;font-size:13px;font-weight:700;
   padding:1px 5px;border-radius:3px;
@@ -213,22 +228,39 @@ input[type=file]{display:none}
 }
 
 .card-pfl{display:flex;gap:6px}
-.pfl-item{font-family:'Exo-Regular',sans-serif;font-size:12px;color:var(--text3);letter-spacing:.02em}
+.pfl-item{font-family:'Exo-Regular',sans-serif;font-size:11px;color:var(--text3);letter-spacing:.02em}
 .pfl-item b{color:var(--text2)}
 
-.p-item{font-family:'Exo-Regular',sans-serif;font-size:12px;color:var(--p_color);letter-spacing:.02em}
-.f-item{font-family:'Exo-Regular',sans-serif;font-size:12px;color:var(--f_color);letter-spacing:.02em}
-.l-item{font-family:'Exo-Regular',sans-serif;font-size:12px;color:var(--l_color);letter-spacing:.02em}
+.p-item{font-family:'Exo-Regular',sans-serif;font-size:11px;color:var(--p_color);letter-spacing:.02em}
+.f-item{font-family:'Exo-Regular',sans-serif;font-size:11px;color:var(--f_color);letter-spacing:.02em}
+.l-item{font-family:'Exo-Regular',sans-serif;font-size:11px;color:var(--l_color);letter-spacing:.02em}
 
-.card-clear.pm{color:var(--pm_color)}
-.card-clear.fr{color:var(--fr_color)}
+.card-clear.pm{
+  color:var(--pm_color);
+  text-shadow:
+    0 0 1px rgba(100,180,255,0.8),
+    0 0 1px rgba(100,180,255,0.6);
+}
+.card-clear.fr{
+  color:var(--fr_color);
+  text-shadow:
+    0 0 1px rgba(119,52,129,0.8),
+    0 0 1px rgba(119,52,129,0.6);
+}
 /* .card-clear.nc{color:var(--nc_color)}
 .card-clear.hc{color:var(--hc_color)}
 .card-clear.tl{color:var(--tl_color)} */
+
+.card-score.is-max{
+  text-shadow:
+    0 0 5px rgba(100,180,255,0.8),
+    0 0 2px rgba(100,180,255,0.6);
+  color: var(--accent2);
+}
 .card-date{
-  position:absolute;right:9px;bottom:4px;
+  position:absolute;right:9px;bottom:6px;
   font-family:'Exo-Regular',sans-serif;font-size:12px;font-weight:700;
-  text-transform:uppercase;color:var(--text3);
+  text-transform:uppercase;color:var(--date_color);
 }
 /* empty */
 .empty-state{grid-column:1/-1;text-align:center;padding:50px 20px;color:var(--text3);font-family:'Exo-Regular',sans-serif;font-size:14px;letter-spacing:.1em}
@@ -470,7 +502,7 @@ let userPttSet = false;  // 用户是否手动设置过PTT
 const FILTERS = {
   b30:  null,                                           // 无过滤，取全部最佳
   p30:  p => p.far === 0 && p.lost === 0,               // Pure Memory 候选
-  ls0:  p => p.ls === 0,                                // LS 为 0
+  ls0:  p => p.ls === 0 && p.diff>=2,                                // LS 为 0
   max:  p => p.pure === p.maxPure,                      // Pure == MaxPure
 };
 
@@ -485,7 +517,7 @@ let settings = {
 };
 // ── utils ────────────────────────────────────────
 const toMs = t => t < 1e12 ? t*1000 : t;
-
+const imgCache = new Map();
 function parseDateStr(s){
   if(!s) return null;
   const m=s.match(/(\d{4})[\/\-](\d{1,2})[\/\-](\d{1,2})\s+(\d{1,2}):(\d{2})/);
@@ -515,6 +547,7 @@ function diffStyle(d){
   if(d===4) return {main:'var(--etr)',bg:'var(--etr-bg)',border:'rgba(64,160,232,.35)'};
   if(d===3) return {main:'var(--byd)',bg:'var(--byd-bg)',border:'rgba(232,64,96,.35)'};
   if(d===2) return {main:'var(--ftr)',bg:'var(--ftr-bg)',border:'rgba(160,80,240,.35)'};
+  if(d===1) return {main:'var(--prs)',bg:'var(--prs-bg)',border:'rgba(160,80,240,.35)'};
   return           {main:'var(--pst)',bg:'var(--pst-bg)',border:'rgba(80,216,144,.30)'};
 }
 
@@ -644,10 +677,14 @@ function renderCards(b30,dateLabel){
 
   <div class="card-cover">
     <div class="no-img">♪</div>
-      <img src="${imgSrc(p.songId,p.diff)}" alt=""
+      <img src="${imgCache.get(p.songId+'_'+p.diff) || imgSrc(p.songId,p.diff)}" alt=""
+        data-key="${p.songId+'_'+p.diff}"
         data-f1="./src/songs/${p.songId}/1080_base_256.jpg"
         data-f2="./src/songs/${p.songId}/base_256.jpg"
-        onload="this.previousElementSibling.style.display='none'"
+        onload="
+          imgCache.set(this.dataset.key, this.src);
+          this.previousElementSibling.style.display='none';
+        "
         onerror="
           if(!this.dataset.tried){
             this.dataset.tried='1';
@@ -671,7 +708,7 @@ function renderCards(b30,dateLabel){
     </div>
     
     <div class="card-r3">
-      <div class="card-score">${fmtScore(p.score)}</div>
+      <div class="card-score${p.pure===p.maxPure?' is-max':''}">${fmtScore(p.score)}</div>
       ${cl.lbl?`<div class="card-clear ${cl.cls}">${cl.lbl}</div>`:''}
       <div class="card-const">${p.constant.toFixed(1)}</div>
     </div>
@@ -683,7 +720,7 @@ function renderCards(b30,dateLabel){
       }</div>
       <div class="f-item">F/<b>${p.far}</b></div>
       <div class="l-item">L/<b>${p.lost}</b></div>
-      ${settings.showLS ? `<div class="pfl-item" style="color:var(--accent2)">LS/<b style="color:var(--accent2)">${p.ls.toFixed(1)}</b></div>` : ''}
+      ${settings.showLS ? `<div class="pfl-item" style="color:var(--ls_color)">LS/<b style="color:var(--ls_color)">${p.ls.toFixed(1)}</b></div>` : ''}
     </div>
     <div class="card-date">${calculateDaysSince(p.ts)}d</div>
   </div>
