@@ -645,12 +645,16 @@ function renderCards(b30,dateLabel){
   <div class="card-cover">
     <div class="no-img">♪</div>
       <img src="${imgSrc(p.songId,p.diff)}" alt=""
-        data-fallback="./src/songs/${p.songId}/base_256.jpg"
+        data-f1="./src/songs/${p.songId}/1080_base_256.jpg"
+        data-f2="./src/songs/${p.songId}/base_256.jpg"
         onload="this.previousElementSibling.style.display='none'"
         onerror="
           if(!this.dataset.tried){
             this.dataset.tried='1';
-            this.src=this.dataset.fallback;
+            this.src=this.dataset.f1;
+          } else if(this.dataset.tried==='1'){
+            this.dataset.tried='2';
+            this.src=this.dataset.f2;
           } else {
             this.style.display='none';
           }
