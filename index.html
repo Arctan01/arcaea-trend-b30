@@ -528,25 +528,12 @@ function clearCls(ct){
   return {lbl:'',cls:''};
 }
 
-function imgSrc(songId, diff) {
-    return new Promise((resolve, reject) => {
-        const baseUrl = `./src/songs/${songId}/`;
-        const primaryImg = diff === 3 ? `${baseUrl}1080_3_256.jpg` : `${baseUrl}1080_base_256.jpg`;
-        const fallbackImg = `${baseUrl}base_256.jpg`;
-        
-        const img = new Image();
-        img.onload = () => resolve(primaryImg);
-        img.onerror = () => {
-            // 主图不存在，尝试备用图
-            const fallback = new Image();
-            fallback.onload = () => resolve(fallbackImg);
-            fallback.onerror = () => resolve(primaryImg); // 都不存在则返回原路径
-            fallback.src = fallbackImg;
-        };
-        img.src = primaryImg;
-    });
+function imgSrc(songId,diff){
+  // const base=(document.getElementById('imgBase').value||'').replace(/\/$/,'');
+  // const pre=base?base+'/':'';
+  return diff===3 ? `./src/songs/${songId}/1080_3_256.jpg` : `./src/songs/${songId}/1080_base_256.jpg`;
+  //return `./src/songs/${songId}/1080_base_256.jpg`;
 }
-
 function songTitle(id) {
     var title = songMap[id] || id;
     return title.length > 17 ? title.substring(0, 15) + '...' : title;
@@ -651,16 +638,23 @@ function renderCards(b30,dateLabel){
   grid.innerHTML=b30.map((p,i)=>{
     const ds=diffStyle(p.diff);
     const cl=clearCls(p.clearType);
-    const src=imgSrc(p.songId,p.diff);
     return`
 <div class="song-card"
   style="--c-main:${ds.main};--c-bg:${ds.bg};--c-border:${ds.border}">
 
   <div class="card-cover">
     <div class="no-img">♪</div>
-    <img src="${src}" alt=""
-      onload="this.previousElementSibling.style.display='none'"
-      onerror="this.style.display='none'">
+      <img src="${imgSrc(p.songId,p.diff)}" alt=""
+        data-fallback="./src/songs/${p.songId}/base_256.jpg"
+        onload="this.previousElementSibling.style.display='none'"
+        onerror="
+          if(!this.dataset.tried){
+            this.dataset.tried='1';
+            this.src=this.dataset.fallback;
+          } else {
+            this.style.display='none';
+          }
+        ">
   </div>
 
   <div class="card-body">
