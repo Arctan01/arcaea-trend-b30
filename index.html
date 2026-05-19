@@ -185,13 +185,6 @@ input[type=file]{display:none}
 }
 .card-title{font-family: 'L2-Regular', sans-serif;font-size:15px;font-weight:700;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 
-/* .card-diff{
-  font-family:'Exo-Regular',sans-serif;font-size:9px;font-weight:700;
-  letter-spacing:.1em;padding:1px 4px;border-radius:3px;
-  background:var(--c-bg,var(--surf2));
-  color:var(--c-main,var(--text2));
-  border:1px solid color-mix(in srgb,var(--c-main,var(--border)) 50%,transparent);
-} */
 .card-ptt{
   font-family:'Exo-Regular',sans-serif;font-size:16px;font-weight:700;
   color:var(--c-main,var(--accent));letter-spacing:.02em;white-space:nowrap;
@@ -258,8 +251,8 @@ input[type=file]{display:none}
   color: var(--accent2);
 }
 .card-date{
-  position:absolute;right:9px;bottom:6px;
-  font-family:'Exo-Regular',sans-serif;font-size:12px;font-weight:700;
+  position:absolute;right:10px;bottom:6px;
+  font-family:'Exo-Regular',sans-serif;font-size:11px;font-weight:700;
   text-transform:uppercase;color:var(--date_color);
 }
 /* empty */
@@ -372,6 +365,66 @@ input[type=file]{display:none}
 .seg-ctrl input:checked+label{
   background:var(--ftr);color:#fff;
 }
+.cq-section{
+  margin-top:24px;
+}
+.cq-head{
+  display:flex;align-items:center;gap:10px;flex-wrap:wrap;
+  margin-bottom:12px;
+}
+.cq-presets{display:flex;gap:6px;flex-wrap:wrap}
+.cq-preset{
+  font-family:'Exo-Regular',sans-serif;font-size:12px;font-weight:700;
+  letter-spacing:.08em;padding:4px 10px;border-radius:5px;
+  border:1px solid var(--border2);background:var(--surf2);
+  color:var(--text2);cursor:pointer;transition:all .15s;
+}
+.cq-preset:hover{border-color:var(--accent);color:var(--accent)}
+.cq-preset.active{border-color:var(--ftr);background:var(--ftr-bg);color:var(--ftr-light)}
+
+.cq-custom{display:flex;align-items:center;gap:6px}
+.cq-input{
+  width:60px;background:var(--surf2);border:1px solid var(--border2);
+  border-radius:5px;color:var(--text);padding:4px 8px;
+  font-family:'Exo-Regular',sans-serif;font-size:13px;font-weight:600;
+  outline:none;transition:border-color .18s;text-align:center;
+}
+.cq-input:focus{border-color:var(--accent)}
+.cq-sep{font-family:'Exo-Regular',sans-serif;font-size:12px;color:var(--text3)}
+
+.cq-sort{
+  margin-left:auto;
+  display:flex;align-items:center;gap:6px;
+}
+.cq-sort-label{
+  font-family:'Exo-Regular',sans-serif;font-size:11px;
+  font-weight:700;letter-spacing:.1em;color:var(--text3);
+}
+.cq-sort select{
+  background:var(--surf2);border:1px solid var(--border2);
+  border-radius:5px;color:var(--text2);padding:4px 8px;
+  font-family:'Exo-Regular',sans-serif;font-size:12px;
+  outline:none;cursor:pointer;
+}
+.cq-sort select:focus{border-color:var(--accent)}
+
+.cq-info{
+  font-family:'Exo-Regular',sans-serif;font-size:11px;
+  color:var(--text3);letter-spacing:.06em;
+  margin-bottom:8px;
+}
+.cq-info b{color:var(--accent2)}
+
+.cq-expand{
+  grid-column:1/-1;
+  display:flex;align-items:center;justify-content:center;
+  gap:8px;margin-top:4px;
+  font-family:'Exo-Regular',sans-serif;font-size:12px;font-weight:700;
+  letter-spacing:.1em;color:var(--text3);cursor:pointer;
+  padding:10px;border:1px dashed var(--border2);border-radius:8px;
+  transition:all .18s;
+}
+.cq-expand:hover{border-color:var(--accent2);color:var(--accent2)}
 </style>
 </head>
 <body>
@@ -408,7 +461,7 @@ input[type=file]{display:none}
   <div class="stats-row">
     <div class="stat">B30 Avg <b id="hAvg">—</b></div>
     <div class="stat">TOP10 Avg <b id="hT10">—</b></div>
-    <div class="stat">期间 <b id="hRange">—</b></div>
+    <div class="stat">日期范围 <b id="hRange">—</b></div>
   </div>
 
   <div class="upload-bar">
@@ -465,8 +518,18 @@ input[type=file]{display:none}
           <label for="rfMax">MAX·30</label>
         </div>
       </div>
+      <div class="setting-item">
+        <div class="setting-label">显示模式</div>
+        <div class="seg-ctrl" id="displayModeCtrl">
+          <input type="radio" name="displayMode" id="dmB30" value="b30" checked>
+          <label for="dmB30">B30 展示</label>
+          <input type="radio" name="displayMode" id="dmCQ" value="cq">
+          <label for="dmCQ">定数查询</label>
+        </div>
+      </div>
     </div>
   </div>
+
   <div class="chart-wrap">
     <div class="sec-lbl">RATING HISTORY — 悬停查看当时 B30 · 移出后保持显示</div>
     <canvas id="ratingChart"></canvas>
@@ -477,27 +540,69 @@ input[type=file]{display:none}
     </div>
   </div>
 
-  <div class="b30-head">
-    <div class="b30-title" id="b30Title">BEST 30</div>
-    <div class="b30-date" id="b30DL"></div>
-    <div class="b30-avg">Max <b id="b30mx">—</b></div>
-    <div class="b30-avg">B30 Avg <b id="b30AL">—</b></div>
-    <div class="b30-avg">TOP10 Avg <b id="b30T10">—</b></div>
+  <!-- B30 Display Section -->
+  <div id="b30Section">
+    <div class="b30-head">
+      <div class="b30-title" id="b30Title">BEST 30</div>
+      <div class="b30-date" id="b30DL"></div>
+      <div class="b30-avg">Max <b id="b30mx">—</b></div>
+      <div class="b30-avg">B30 Avg <b id="b30AL">—</b></div>
+      <div class="b30-avg">TOP10 Avg <b id="b30T10">—</b></div>
+    </div>
+    <div class="cards-grid" id="grid">
+      <div class="empty-state"><div class="ei">♪</div>请上传 CSV 文件后查看</div>
+    </div>
   </div>
-  <div class="cards-grid" id="grid">
-    <div class="empty-state"><div class="ei">♪</div>请上传 CSV 文件后查看</div>
-  </div>
+  
+  <!-- Constant Query Section -->
+  <div class="cq-section" id="cqSection" style="display:none">
+    <div class="b30-head" style="margin-bottom:10px">
+      <div class="b30-title">定数查询</div>
+      <div class="b30-avg">共 <b id="cqCount">—</b> 条 · Avg <b id="cqAvg">—</b></div>
+    </div>
+    <div class="cq-info" id="cqInfo" style="display:none">
+      定数 <b id="cqRangeLabel">—</b> 的最佳成绩（当前时间点）
+    </div>
 
+    <div class="cq-head">
+      <div class="cq-presets" id="cqPresets">
+        <button class="cq-preset" data-min="7" data-max="7.9">7-7+</button>
+        <button class="cq-preset" data-min="8" data-max="8.9">8-8+</button>
+        <button class="cq-preset" data-min="9" data-max="9.9">9-9+</button>
+        <button class="cq-preset" data-min="10" data-max="10.9">10-10+</button>
+        <button class="cq-preset" data-min="11" data-max="11.9">11-11+</button>
+      </div>
+      <div class="cq-custom">
+        <input class="cq-input" id="cqMin" type="number" step="0.1" min="0" max="99" placeholder="min">
+        <span class="cq-sep">~</span>
+        <input class="cq-input" id="cqMax" type="number" step="0.1" min="0" max="99" placeholder="max">
+      </div>
+      <div class="cq-sort">
+        <div class="cq-sort-label">排序</div>
+        <select id="cqSort">
+          <option value="potential">PTT ↓</option>
+          <option value="score">Score ↓</option>
+          <option value="constant">Constant ↓</option>
+          <option value="recent">最近游玩</option>
+        </select>
+      </div>
+    </div>
+    <div class="cards-grid" id="cqGrid"></div>
+  </div>
 </div>
 
 <script>
 // ── state ────────────────────────────────────────
-let ratingHistory=[], playHistory=[];
-let chartData=[];
+window.ratingHistory=[], window.playHistory=[];
+window.chartData=[];
+window.songMap={};
+window.userPttSet=false;
 let hoverIdx=-1;
+let hoverTs = null;       // 鼠标悬停中的实时ts，mouseleave后清null
+let lastQueryTs = null;   // 最后一次查询用的ts，持久保留
 let shownB30=[], shownDate='';   // what's currently displayed (persist on mouseout)
-let songMap = {};  // id -> title_en
-let userPttSet = false;  // 用户是否手动设置过PTT
+// let songMap = {};  // id -> title_en
+// let userPttSet = false;  // 用户是否手动设置过PTT
 // ── filters ──────────────────────────────────────
 const FILTERS = {
   b30:  null,                                           // 无过滤，取全部最佳
@@ -512,6 +617,7 @@ const FILTER_LABELS = {
 
 let settings = {
   filter: 'b30',        // 当前选中的 filter key
+  displayMode: 'b30',   // 'b30' | 'cq'
   showLS: true,
   maxPureStyle: 'plus', // 'plus' | 'minus'
 };
@@ -532,7 +638,7 @@ function calculateDaysSince(ts) {
   const now = new Date();
   // 计算时间差（毫秒），然后转换为天数
   const diffTime = Math.abs(now - past);
-  const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)); 
+  const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24)); 
   return diffDays;
 }
 
@@ -612,38 +718,82 @@ function parsePlayCSV(txt){
 }
 
 // ── B30 calc ─────────────────────────────────────
-function calcBest30(ts, filter=null){
-  const EPSILON=0.000001;
-  const best=new Map();
-  for(const p of playHistory){
-    if(p.ts>ts) continue;
-    const k=p.songId+'_'+p.diff;
-    const existing=best.get(k);
-    if(!existing||
-       p.potential>existing.potential+EPSILON||
-       (Math.abs(p.potential-existing.potential)<=EPSILON&&p.score>existing.score)){
-      best.set(k,p);
+function calcBest30(ts = null, filter = null) {
+  const EPSILON = 0.000001;
+  const best = new Map();
+  for (const p of playHistory) {
+    if (ts !== null && p.ts > ts) continue;  // ts为null时不过滤
+    const k = p.songId + '_' + p.diff;
+    const ex = best.get(k);
+    if (!ex ||
+        p.potential > ex.potential + EPSILON ||
+        (Math.abs(p.potential - ex.potential) <= EPSILON && p.score > ex.score)) {
+      best.set(k, p);
     }
   }
-  // filter 在选出每首最佳成绩之后再应用
-  const all=[...best.values()]
-    .filter(p=>filter?filter(p):true)
-    .sort((a,b)=>{
-      const d=b.potential-a.potential;
-      return Math.abs(d)>EPSILON?d:b.score-a.score;
+  const all = [...best.values()]
+    .filter(p => filter ? filter(p) : true)
+    .sort((a, b) => {
+      const d = b.potential - a.potential;
+      return Math.abs(d) > EPSILON ? d : b.score - a.score;
     });
-  const top=all.slice(0,30);
-  const avg=top.length?top.reduce((s,x)=>s+x.potential,0)/top.length:0;
-  const top10=top.slice(0,10);
-  const t10avg=top10.length?top10.reduce((s,x)=>s+x.potential,0)/top10.length:0;
-  return{b30:top,avg,t10avg,total:all.length};
+  const top = all.slice(0, 30);
+  const avg = top.length ? top.reduce((s, x) => s + x.potential, 0) / top.length : 0;
+  const t10avg = top.slice(0, 10).reduce((s, x) => s + x.potential, 0) / Math.min(10, top.length) || 0;
+  return { b30: top, avg, t10avg, total: all.length, all };  // 多返回 all 给 runCQ 用
 }
 
 // 便捷包装：用当前 settings.filter
 function calcB30(ts){
   return calcBest30(ts, FILTERS[settings.filter]);
 }
+// ── 公共卡片模板 ──────────────────────────────────
+function cardHTML(p, i){
+  const ds = diffStyle(p.diff);
+  const cl = clearCls(p.clearType);
+  const src = imgCache.get(p.songId+'_'+p.diff) || imgSrc(p.songId, p.diff);
+  const maxPureStr = settings.maxPureStyle === 'plus'
+    ? ` (+<b>${p.maxPure}</b>)`
+    : ` (-<b>${p.pure - p.maxPure}</b>)`;
+  const lsStr = settings.showLS
+    ? `<div class="pfl-item" style="color:var(--ls_color)">LS/<b style="color:var(--ls_color)">${p.ls.toFixed(1)}</b></div>`
+    : '';
+  const clearStr = cl.lbl ? `<div class="card-clear ${cl.cls}">${cl.lbl}</div>` : '';
 
+  return `
+<div class="song-card" style="--c-main:${ds.main};--c-bg:${ds.bg};--c-border:${ds.border}">
+  <div class="card-cover">
+    <div class="no-img">♪</div>
+    <img src="${src}" alt=""
+      data-key="${p.songId+'_'+p.diff}"
+      data-f1="./src/songs/${p.songId}/1080_base_256.jpg"
+      data-f2="./src/songs/${p.songId}/base_256.jpg"
+      onload="imgCache.set(this.dataset.key,this.src);this.previousElementSibling.style.display='none'"
+      onerror="if(!this.dataset.tried){this.dataset.tried='1';this.src=this.dataset.f1;}else if(this.dataset.tried==='1'){this.dataset.tried='2';this.src=this.dataset.f2;}else{this.style.display='none';}">
+  </div>
+  <div class="card-body">
+    <div class="card-r1">
+      <div class="card-rank-title">
+        <div class="card-no">#${i+1}</div>
+        <div class="card-title" title="${songTitle(p.songId)}">${songTitle(p.songId)}</div>
+      </div>
+      <div class="card-ptt">${p.potential.toFixed(4)}</div>
+    </div>
+    <div class="card-r3">
+      <div class="card-score${p.pure===p.maxPure?' is-max':''}">${fmtScore(p.score)}</div>
+      ${clearStr}
+      <div class="card-const">${p.constant.toFixed(1)}</div>
+    </div>
+    <div class="card-pfl">
+      <div class="p-item">P/<b>${p.pure}</b>${maxPureStr}</div>
+      <div class="f-item">F/<b>${p.far}</b></div>
+      <div class="l-item">L/<b>${p.lost}</b></div>
+      ${lsStr}
+    </div>
+    <div class="card-date">${calculateDaysSince(p.ts)}d</div>
+  </div>
+</div>`;
+}
 // ── render ───────────────────────────────────────
 function renderCards(b30,dateLabel){
   shownB30=b30; shownDate=dateLabel;
@@ -668,66 +818,8 @@ function renderCards(b30,dateLabel){
     return;
   }
 
-  grid.innerHTML=b30.map((p,i)=>{
-    const ds=diffStyle(p.diff);
-    const cl=clearCls(p.clearType);
-    return`
-<div class="song-card"
-  style="--c-main:${ds.main};--c-bg:${ds.bg};--c-border:${ds.border}">
-
-  <div class="card-cover">
-    <div class="no-img">♪</div>
-      <img src="${imgCache.get(p.songId+'_'+p.diff) || imgSrc(p.songId,p.diff)}" alt=""
-        data-key="${p.songId+'_'+p.diff}"
-        data-f1="./src/songs/${p.songId}/1080_base_256.jpg"
-        data-f2="./src/songs/${p.songId}/base_256.jpg"
-        onload="
-          imgCache.set(this.dataset.key, this.src);
-          this.previousElementSibling.style.display='none';
-        "
-        onerror="
-          if(!this.dataset.tried){
-            this.dataset.tried='1';
-            this.src=this.dataset.f1;
-          } else if(this.dataset.tried==='1'){
-            this.dataset.tried='2';
-            this.src=this.dataset.f2;
-          } else {
-            this.style.display='none';
-          }
-        ">
-  </div>
-
-  <div class="card-body">
-    <div class="card-r1">
-      <div class="card-rank-title">
-        <div class="card-no">#${i+1}</div>
-        <div class="card-title" title="${songTitle(p.songId)}">${songTitle(p.songId)}</div>
-      </div>
-      <div class="card-ptt">${p.potential.toFixed(4)}</div>
-    </div>
-    
-    <div class="card-r3">
-      <div class="card-score${p.pure===p.maxPure?' is-max':''}">${fmtScore(p.score)}</div>
-      ${cl.lbl?`<div class="card-clear ${cl.cls}">${cl.lbl}</div>`:''}
-      <div class="card-const">${p.constant.toFixed(1)}</div>
-    </div>
-    <div class="card-pfl">
-      <div class="p-item">P/<b>${p.pure}</b>${
-        settings.maxPureStyle==='plus'
-          ? ` (+<b>${p.maxPure}</b>)`
-          : ` (-<b>${p.pure-p.maxPure}</b>)`
-      }</div>
-      <div class="f-item">F/<b>${p.far}</b></div>
-      <div class="l-item">L/<b>${p.lost}</b></div>
-      ${settings.showLS ? `<div class="pfl-item" style="color:var(--ls_color)">LS/<b style="color:var(--ls_color)">${p.ls.toFixed(1)}</b></div>` : ''}
-    </div>
-    <div class="card-date">${calculateDaysSince(p.ts)}d</div>
-  </div>
-</div>`;
-  }).join('');
+  grid.innerHTML = b30.map((p, i) => cardHTML(p, i)).join('');
 }
-
 function showCurrentB30(){
   const{b30,avg,t10avg}=calcB30(Date.now());
   renderCards(b30,'当前');
@@ -841,8 +933,9 @@ canvas.addEventListener('mousemove',throttle(function(e){
   drawChart();
 
   const d=chartData[hoverIdx];
-  const hTs=parseDateStr(d.dateStr)||d.ts;
-  const{b30,avg,t10avg}=calcB30(hTs);
+  hoverTs = parseDateStr(d.dateStr) || d.ts;
+  lastQueryTs = hoverTs;  // 同步更新持久ts
+  const{b30,avg,t10avg}=calcB30(hoverTs);
 
   const tip=document.getElementById('cTip');
   document.getElementById('tipDate').textContent=d.dateStr;
@@ -856,8 +949,12 @@ canvas.addEventListener('mousemove',throttle(function(e){
   if(ty<0) ty=4;
   tip.style.left=tx+'px';tip.style.top=ty+'px';
 
-  // update cards — this becomes the new "last shown"
-  renderCards(b30,d.dateStr);
+  // 根据显示模式更新卡片
+  if(settings.displayMode === 'b30'){
+    renderCards(b30,d.dateStr);
+  } else if(settings.displayMode === 'cq'){
+    runCQ(hoverTs);
+  }
 }, 32));
 function throttle(fn, ms){
   let last=0;
@@ -870,6 +967,7 @@ function throttle(fn, ms){
 }
 canvas.addEventListener('mouseleave',function(){
   hoverIdx=-1;
+  hoverTs=null;
   drawChart();
   document.getElementById('cTip').style.display='none';
   // do NOT reset cards — keep whatever was last shown
@@ -965,30 +1063,233 @@ document.getElementById('settingsHeader').addEventListener('click',function(){
 
 document.getElementById('togLS').addEventListener('change',function(){
   settings.showLS=this.checked;
-  if(shownB30.length) renderCards(shownB30,shownDate);
+  if(settings.displayMode === 'b30' && shownB30.length){
+    renderCards(shownB30,shownDate);
+  } else if(settings.displayMode === 'cq' && cqState.min !== null && cqState.max !== null){
+    runCQ(lastQueryTs);
+  }
 });
 
 document.querySelectorAll('input[name="mpStyle"]').forEach(r=>{
   r.addEventListener('change',function(){
     settings.maxPureStyle=this.value;
-    if(shownB30.length) renderCards(shownB30,shownDate);
+    if(settings.displayMode === 'b30' && shownB30.length){
+      renderCards(shownB30,shownDate);
+    } else if(settings.displayMode === 'cq' && cqState.min !== null && cqState.max !== null){
+      runCQ(lastQueryTs);
+    }
   });
 });
 document.querySelectorAll('input[name="rankFilter"]').forEach(r=>{
   r.addEventListener('change',function(){
     settings.filter=this.value;
-    // 重新计算并渲染
-    const ts=shownDate&&shownDate!=='当前'
-      ?parseDateStr(shownDate)||Date.now()
-      :Date.now();
-    const{b30,avg,t10avg}=calcB30(ts);
-    renderCards(b30,shownDate||'当前');
-    document.getElementById('hB30').textContent=avg.toFixed(4);
-    document.getElementById('hT10').textContent=t10avg.toFixed(4);
+    // 根据当前显示模式重新渲染
+    if(settings.displayMode === 'b30'){
+      const ts=shownDate&&shownDate!=='当前'
+        ?parseDateStr(shownDate)||Date.now()
+        :Date.now();
+      const{b30,avg,t10avg}=calcB30(ts);
+      renderCards(b30,shownDate||'当前');
+      document.getElementById('hAvg').textContent=avg.toFixed(4);
+      document.getElementById('hT10').textContent=t10avg.toFixed(4);
+    } else if(settings.displayMode === 'cq' && cqState.min !== null && cqState.max !== null){
+      runCQ(lastQueryTs);
+    }
   });
+});
+
+// ── 显示模式切换 ────────────────────────────────────
+document.querySelectorAll('input[name="displayMode"]').forEach(r=>{
+  r.addEventListener('change',function(){
+    settings.displayMode=this.value;
+    const b30Section=document.getElementById('b30Section');
+    const cqSection=document.getElementById('cqSection');
+    
+    if(this.value==='b30'){
+      b30Section.style.display='';
+      cqSection.style.display='none';
+      // 显示当前B30
+      showCurrentB30();
+    } else if(this.value==='cq'){
+      b30Section.style.display='none';
+      cqSection.style.display='';
+      // 默认查询定数9-9.9
+      if(cqState.min===null||cqState.max===null){
+        setCQRange(9, 9.9);
+      }
+    }
+  });
+});
+// ── constant query ────────────────────────────────
+const cqState = {
+  min: null,
+  max: null,
+  sort: 'potential',
+  showAll: false,
+  activePreset: null,
+};
+
+
+
+function runCQ(ts = null){
+  const {min,max,sort,showAll}=cqState;
+  if(min===null||max===null) return;
+
+  // 获取所有符合排行模式的歌曲（不限制30首）
+  const { all: allBest } = calcBest30(ts); 
+  
+  // 应用排行模式过滤
+  const filter = FILTERS[settings.filter];
+  let all = allBest.filter(p => !filter || filter(p));
+  
+  // 应用定数过滤和排序
+  all = all.filter(p=>p.constant>=min&&p.constant<=max)
+    .sort((a,b)=>{
+      if(sort==='potential') return b.potential-a.potential;
+      if(sort==='score')     return b.score-a.score;
+      if(sort==='constant')  return b.constant-a.constant;
+      if(sort==='recent')    return b.ts-a.ts;
+      return 0;
+    });
+
+  const shown=showAll?all:all.slice(0,30);
+  const avg=all.length?all.reduce((s,x)=>s+x.potential,0)/all.length:0;
+
+  document.getElementById('cqCount').textContent=all.length;
+  document.getElementById('cqAvg').textContent=all.length?avg.toFixed(4):'—';
+  document.getElementById('cqRangeLabel').textContent=`${min} ~ ${max}`;
+  document.getElementById('cqInfo').style.display='';
+
+  const grid=document.getElementById('cqGrid');
+  if(!all.length){
+    grid.innerHTML='<div class="empty-state"><div class="ei">♪</div>该定数区间暂无记录</div>';
+    return;
+  }
+
+  // 复用 renderCards 的卡片模板
+  grid.innerHTML = shown.map((p, i) => cardHTML(p, i)).join('');
+
+  // 展开按钮
+  if(!showAll&&all.length>30){
+    grid.insertAdjacentHTML('beforeend',`
+      <div class="cq-expand" id="cqExpandBtn">
+        ▼ 显示全部 (${all.length} 条)
+      </div>`);
+    document.getElementById('cqExpandBtn').addEventListener('click',()=>{
+      cqState.showAll=true;
+      runCQ(ts);
+    });
+  } else if(showAll&&all.length>30){
+    grid.insertAdjacentHTML('beforeend',`
+      <div class="cq-expand" id="cqCollapseBtn">
+        ▲ 收起
+      </div>`);
+    document.getElementById('cqCollapseBtn').addEventListener('click',()=>{
+      cqState.showAll=false;
+      runCQ(ts);
+    });
+  }
+}
+
+function setCQRange(min,max,ts=null){
+  cqState.min=min;
+  cqState.max=max;
+  cqState.showAll=false;
+  document.getElementById('cqMin').value=min;
+  document.getElementById('cqMax').value=max;
+  runCQ(ts);
+}
+
+// 预设按钮
+document.getElementById('cqPresets').addEventListener('click',function(e){
+  const btn=e.target.closest('.cq-preset');
+  if(!btn) return;
+  // 切换 active
+  this.querySelectorAll('.cq-preset').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  cqState.activePreset=btn;
+  setCQRange(parseFloat(btn.dataset.min),parseFloat(btn.dataset.max),hoverTs);
+});
+
+// 自定义输入
+function onCustomInput(){
+  const min=parseFloat(document.getElementById('cqMin').value);
+  const max=parseFloat(document.getElementById('cqMax').value);
+  if(isNaN(min)||isNaN(max)) return;
+  // 取消预设高亮
+  document.querySelectorAll('.cq-preset').forEach(b=>b.classList.remove('active'));
+  cqState.activePreset=null;
+  setCQRange(min,max,lastQueryTs);
+}
+document.getElementById('cqMin').addEventListener('change',onCustomInput);
+document.getElementById('cqMax').addEventListener('change',onCustomInput);
+
+// 排序
+document.getElementById('cqSort').addEventListener('change',function(){
+  cqState.sort=this.value;
+  cqState.showAll=false;
+  runCQ(lastQueryTs);
 });
 window.addEventListener('resize',resizeCanvas);
 setTimeout(resizeCanvas,60);
+// ── 渲染控制接口（供 Puppeteer 调用）────────────────
+window.__RenderAPI = {
+  // 加载数据：传入两个 CSV 文本内容
+  loadData(ratingCSV, playCSV) {
+    ratingHistory = parseRatingCSV(ratingCSV);
+    chartData = ratingHistory;
+    playHistory = parsePlayCSV(playCSV);
+  },
+
+  // 跳转到指定时间戳并渲染
+  seekTo(ts) {
+    // 更新图表高亮点
+    hoverIdx = ratingHistory.findIndex(d => d.ts >= ts);
+    if (hoverIdx < 0) hoverIdx = ratingHistory.length - 1;
+    lastQueryTs = ts;
+    drawChart();
+
+    // 更新卡片
+    const { b30, avg, t10avg } = calcB30(ts);
+    renderCards(b30, ratingHistory[hoverIdx]?.dateStr || '');
+    document.getElementById('hAvg').textContent = avg.toFixed(4);
+    document.getElementById('hT10').textContent = t10avg.toFixed(4);
+  },
+
+  // 返回当前帧信息（供调试）
+  getFrameInfo() {
+    return {
+      hoverIdx,
+      rating: ratingHistory[hoverIdx]?.rating,
+      dateStr: ratingHistory[hoverIdx]?.dateStr,
+    };
+  },
+
+  async waitForImages() {
+    // 等待所有图片不再处于加载中状态
+    await new Promise(resolve => {
+      const check = () => {
+        const imgs = [...document.querySelectorAll('.card-cover img')];
+        const pending = imgs.filter(img => !img.complete);
+        if (pending.length === 0) {
+          resolve();
+        } else {
+          setTimeout(check, 100);
+        }
+      };
+      check();
+    });
+  },
+  setOpacity(val) {
+    document.getElementById('b30Section').style.opacity = val;
+    document.getElementById('cqSection').style.opacity  = val;
+  },
+
+    // 获取当前 b30 的指纹（用于判断内容是否真的变化）
+  getFingerprint() {
+    return shownB30.map(p => p.songId + '_' + p.diff + '_' + p.score).join('|');
+  },
+};
 </script>
 </body>
 </html>

@@ -1,1 +1,5 @@
 /src/*.bat
+frames/
+data/
+node_modules/
+b30-timelapse.mp4
