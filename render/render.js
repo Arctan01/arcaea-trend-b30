@@ -8,8 +8,18 @@ const CONFIG = {
   ratingCSV: './data/ratings.csv',     // 两个 CSV 文件路径
   playCSV:   './data/all_scores.csv',
   outputDir: './frames',
-  
-  viewport:  { width: 1200, height: 1600 },  // 页面尺寸，影响截图分辨率
+
+  profile: {
+    name: 'Arctan01',   // 用户名，空字符串则不设置
+    ptt:  '13.00',      // 潜力值，空字符串则不设置
+  },
+
+  display: {
+    showLS:       true,
+    maxPureStyle: 'plus',   // 'plus' | 'minus'
+    filter:       'b30',    // 'b30' | 'p30' | 'ls0' | 'max'
+  },
+  viewport:  { width: 1200, height: 1400 },  // 页面尺寸，影响截图分辨率
   fps: 30,
   // 每个 rating history 点停留多少帧
   // 例如 60帧/30fps = 2秒每个点
@@ -74,7 +84,32 @@ async function main() {
   // 等待 songlist 加载
   await page.waitForFunction(() => Object.keys(window.songMap).length > 0, { timeout: 10000 })
     .catch(() => console.warn('songlist timeout, continuing without titles'));
+  // ── 存档信息 ──────────────────────────────────
+  await page.evaluate((name, ptt) => {
+    if (name) document.getElementById('pName').textContent = name;
+    if (ptt) {
+      document.getElementById('pPtt').textContent = 'PTT ' + parseFloat(ptt).toFixed(2);
+      window.userPttSet = true;
+    }
+  }, CONFIG.profile.name, CONFIG.profile.ptt);
 
+  // ── 显示设置 ──────────────────────────────────
+  await page.evaluate((s) => {
+    window.settings.showLS        = s.showLS;
+    window.settings.maxPureStyle  = s.maxPureStyle;
+    window.settings.filter        = s.filter;
+    // 同步 UI 状态（不影响渲染，但保持一致）
+    document.getElementById('togLS').checked = s.showLS;
+    document.querySelector(`input[name="mpStyle"][value="${s.maxPureStyle}"]`).checked = true;
+    document.querySelector(`input[name="rankFilter"][value="${s.filter}"]`).checked = true;
+  }, CONFIG.display);
+
+  // ── 隐藏 UI 元素 ──────────────────────────────
+  await page.evaluate(() => {
+    document.querySelector('.upload-bar').style.display    = 'none';
+    document.querySelector('.settings-wrap').style.display = 'none';
+    document.querySelector('#btnProfile').style.display    = 'none';
+  });
   // 生成时间轴帧列表
   const frames = await page.evaluate((cfg) => {
     const history = window.ratingHistory;

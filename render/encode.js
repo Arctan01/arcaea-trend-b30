@@ -5,8 +5,8 @@ const CONFIG = {
   framesDir: './frames',
   fps: 30,
   output: './b30-timelapse.mp4',
-  // 视频质量 0-51，越低越好，18-23 是常用范围
-  crf: 18,
+  // 视频质量 0-51，越低越好
+  crf: 10,
 };
 
 ffmpeg()

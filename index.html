@@ -595,19 +595,18 @@ input[type=file]{display:none}
 // ── state ────────────────────────────────────────
 window.ratingHistory=[], window.playHistory=[];
 window.chartData=[];
-window.songMap={};
-window.userPttSet=false;
+window.songMap={};        // id -> title_en
+window.userPttSet=false;  // 用户是否手动设置过PTT
 let hoverIdx=-1;
 let hoverTs = null;       // 鼠标悬停中的实时ts，mouseleave后清null
 let lastQueryTs = null;   // 最后一次查询用的ts，持久保留
 let shownB30=[], shownDate='';   // what's currently displayed (persist on mouseout)
-// let songMap = {};  // id -> title_en
-// let userPttSet = false;  // 用户是否手动设置过PTT
+
 // ── filters ──────────────────────────────────────
 const FILTERS = {
   b30:  null,                                           // 无过滤，取全部最佳
   p30:  p => p.far === 0 && p.lost === 0,               // Pure Memory 候选
-  ls0:  p => p.ls === 0 && p.diff>=2,                                // LS 为 0
+  ls0:  p => p.ls === 0 && p.diff>=2,                    // LS 为 0 且难度大于等于2
   max:  p => p.pure === p.maxPure,                      // Pure == MaxPure
 };
 
@@ -615,7 +614,7 @@ const FILTER_LABELS = {
   b30: 'B30', p30: 'P30', ls0: 'LS0·30', max: 'MAX·30',
 };
 
-let settings = {
+window.settings = {
   filter: 'b30',        // 当前选中的 filter key
   displayMode: 'b30',   // 'b30' | 'cq'
   showLS: true,
