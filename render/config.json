@@ -1,0 +1,20 @@
+{
+  "url": "http://localhost:8080",   
+  "profile": {
+    "name": "Arctan01",
+    "ptt": "13.00"
+  },
+  "display": {
+    "filter": "b30",
+    "maxPureStyle": "plus",
+    "showLS": true
+  },
+  "viewport": { "width": 1200, "height": 1400 },
+  "fps": 30,
+  "framesPerPoint": 45,
+  "transitionFrames": 5,
+  "ratingCSV": "./data/ratings.csv",
+  "playCSV": "./data/all_scores.csv",
+  "outputDir": "./frames",
+  "pttStep": 0.1
+}

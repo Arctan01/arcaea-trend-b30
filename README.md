@@ -111,14 +111,16 @@ brew install ffmpeg
  
 ### 配置
  
-`render/render.js` 顶部的 `CONFIG` 可按需修改：
+渲染前编辑 `render/config.json` 即可，无需修改脚本。
  
 | 参数 | 默认值 | 说明 |
 |---|---|---|
 | `url` | `http://localhost:8080` | 本地服务器地址 |
+| `profile` | `...` | 用户名和PTT值，若为空则不设置 |
+| `display` | `b30 plus true` |分别设置模式('b30' \ 'p30' \ 'ls0' \ 'max') ，设置小P显示样式( 'plus' \ 'minus')，是否显示LS(true \ false) |
 | `ratingCSV` | `./data/ratings.csv` | Rating History 文件路径 |
 | `playCSV` | `./data/all_scores.csv` | Play History 文件路径 |
-| `viewport` | `1200 × 1600` | 视频分辨率 |
+| `viewport` | `1200 × 1400` | 视频分辨率（同时控制截图区域） |
 | `fps` | `30` | 帧率 |
 | `framesPerPoint` | `45` | 每个时间点停留帧数（45帧 = 1.5秒） |
 | `transitionFrames` | `15` | 淡入过渡帧数（15帧 = 0.5秒） |

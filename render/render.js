@@ -2,33 +2,8 @@ const puppeteer = require('puppeteer');
 const fs = require('fs');
 const path = require('path');
 
-// ── 配置 ──────────────────────────────────────────
-const CONFIG = {
-  url: 'http://localhost:8080',       // 本地服务器地址
-  ratingCSV: './data/ratings.csv',     // 两个 CSV 文件路径
-  playCSV:   './data/all_scores.csv',
-  outputDir: './frames',
 
-  profile: {
-    name: 'Arctan01',   // 用户名，空字符串则不设置
-    ptt:  '13.00',      // 潜力值，空字符串则不设置
-  },
-
-  display: {
-    showLS:       true,
-    maxPureStyle: 'plus',   // 'plus' | 'minus'
-    filter:       'b30',    // 'b30' | 'p30' | 'ls0' | 'max'
-  },
-  viewport:  { width: 1200, height: 1400 },  // 页面尺寸，影响截图分辨率
-  fps: 30,
-  // 每个 rating history 点停留多少帧
-  // 例如 60帧/30fps = 2秒每个点
-  framesPerPoint: 60,
-  // 或者按 PTT 步长生成关键帧（二选一）
-  pttStep: 0.1,  // 设为 0.01 则按步长，null 则用每个 rating 点
-  transitionFrames: 5,   // 淡入帧数
-};
-
+const CONFIG = JSON.parse(fs.readFileSync(path.join(__dirname, 'config.json'), 'utf-8'));
 async function main() {
   // 准备输出目录
   fs.rmSync(CONFIG.outputDir, { recursive: true, force: true });
