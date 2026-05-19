@@ -19,6 +19,7 @@
 ├── index.html
 ├── package.json          # 视频导出依赖（可选）
 ├── render/               # 视频导出脚本（可选）
+│   ├── config.json
 │   ├── render.js
 │   └── encode.js
 ├── data/                 # 视频导出用的数据文件
