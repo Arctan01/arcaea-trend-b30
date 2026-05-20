@@ -229,16 +229,16 @@ input[type=file]{display:none;}
   <div class="player-header">
     <div>
       <div class="player-name">
-        <span id="pName">Arcaea B30</span>
+        <span id="pName">Arcaea Best 30</span>
         <span class="ptt-pill" id="pPtt">PTT —</span>
         <span class="ptt-pill" id="pMaxPtt" style="background:linear-gradient(135deg,#204080,#102860);border-color:#4080c0;display:none">Max —</span>
       </div>
     </div>
   </div>
   <div class="stats-row" id="statsRow">
-    <div class="stat">B30 Avg <b id="sBavg" style="min-width:52px;display:inline-block">—</b></div>
+    <div class="stat">BEST30 Avg <b id="sBavg" style="min-width:52px;display:inline-block">—</b></div>
     <div class="stat">TOP10 Avg <b id="sT10" style="min-width:52px;display:inline-block">—</b></div>
-    <div class="stat">日期 <b id="hRange" style="min-width:160px;display:inline-block">—</b></div>
+    <div class="stat">Date Range <b id="hRange" style="min-width:160px;display:inline-block">—</b></div>
   </div>
  
   <!-- Chart -->
@@ -619,9 +619,9 @@ async function exportToCanvas(list, { includeChart=false, includeHeader=false }=
     const rangeVal= document.getElementById('hRange').textContent;
 
     const statsItems = [
-      { label:'B30 Avg ',  val:bavgVal, valW:52  },
-      { label:'T10 Avg ',  val:t10Val,  valW:52  },
-      { label:'',          val:rangeVal,valW:160 },
+      { label:'BEST30 Avg ',  val:bavgVal, valW:52  },
+      { label:'TOP10 Avg ',  val:t10Val,  valW:52  },
+      { label:'Date Range ', val:rangeVal,valW:160 },
     ];
     let sx = PAD;
     for (const { label, val, valW } of statsItems) {
