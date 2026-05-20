@@ -16,5 +16,5 @@
   "ratingCSV": "./data/ratings.csv",
   "playCSV": "./data/all_scores.csv",
   "outputDir": "./frames",
-  "pttStep": 0.1
+  "pttStep": 0.01
 }

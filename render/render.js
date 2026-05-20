@@ -78,11 +78,26 @@ async function main() {
     document.querySelector(`input[name="mpStyle"][value="${s.maxPureStyle}"]`).checked = true;
     document.querySelector(`input[name="rankFilter"][value="${s.filter}"]`).checked = true;
   }, CONFIG.display);
+  await page.evaluate(() => {
+    if (!window.playHistory.length || !window.ratingHistory.length) return;
 
+    // 计算全局最大 B30
+    const filterFunc = FILTERS[window.settings.filter] || null;
+    const { avg, t10avg } = calcBest30(null, filterFunc);
+
+    document.getElementById('sBavg').textContent = avg.toFixed(4);
+    document.getElementById('sT10').textContent = t10avg.toFixed(4);
+
+    // 设置日期范围
+    const first = window.ratingHistory[0];
+    const last = window.ratingHistory[window.ratingHistory.length - 1];
+    document.getElementById('hRange').textContent =
+      first.dateStr.split(' ')[0] + ' ~ ' + last.dateStr.split(' ')[0];
+  });
   // ── 隐藏 UI 元素 ──────────────────────────────
   await page.evaluate(() => {
-    document.querySelector('.upload-bar').style.display    = 'none';
-    document.querySelector('.settings-wrap').style.display = 'none';
+    document.querySelector('.controls-bar').style.display    = 'none';
+    //document.querySelector('.settings-wrap').style.display = 'none';
     document.querySelector('#btnProfile').style.display    = 'none';
   });
   // 生成时间轴帧列表
@@ -141,7 +156,7 @@ async function main() {
     // 跳转到该时间点（先不截图）
     await page.evaluate(ts => window.__RenderAPI.seekTo(ts), frame.ts);
     await page.evaluate(() => window.__RenderAPI.waitForImages());
-    await new Promise(r => setTimeout(r, 300));
+    await new Promise(r => setTimeout(r, 600));
 
     const fingerprint = await page.evaluate(() => window.__RenderAPI.getFingerprint());
     const changed = fingerprint !== prevFingerprint;
