@@ -1,192 +1,153 @@
-const puppeteer = require('puppeteer');
-const fs = require('fs');
+'use strict';
+const fs   = require('fs');
 const path = require('path');
+const { parseRatingCSV, parsePlayCSV, calcBest30, fingerprint } = require('./parse');
+const { renderFrame } = require('./draw');
+const { createCanvas } = require('canvas');
 
-
+const ROOT = path.join(__dirname, '..');
 const CONFIG = JSON.parse(fs.readFileSync(path.join(__dirname, 'config.json'), 'utf-8'));
-async function main() {
-  // 准备输出目录
-  fs.rmSync(CONFIG.outputDir, { recursive: true, force: true });
-  fs.mkdirSync(CONFIG.outputDir);
 
-  const ratingCSV = fs.readFileSync(CONFIG.ratingCSV, 'utf-8');
-  const playCSV   = fs.readFileSync(CONFIG.playCSV,   'utf-8');
+const ratingHistory = parseRatingCSV(fs.readFileSync(path.resolve(__dirname, CONFIG.ratingCSV), 'utf-8'));
+const playHistory   = parsePlayCSV(fs.readFileSync(path.resolve(__dirname, CONFIG.playCSV), 'utf-8'));
 
-  const browser = await puppeteer.launch({
-    headless: true,
-    args: ['--no-sandbox', '--disable-setuid-sandbox'],
-  });
-
-  const page = await browser.newPage();
-  await page.setViewport(CONFIG.viewport);
-
-  // 导航到页面
-    await page.goto(CONFIG.url, { waitUntil: 'networkidle0' });
-
-  // 确认页面 JS 已执行
-  const pageReady = await page.evaluate(() => {
-    return {
-      hasAPI:    typeof window.__RenderAPI !== 'undefined',
-      hasSongMap: typeof window.songMap !== 'undefined',
-      hasHistory: typeof window.ratingHistory !== 'undefined',
-    };
-  });
-  console.log('页面状态:', pageReady);
-
-  // 注入数据
-  const loadResult = await page.evaluate((rc, pc) => {
-    try {
-      window.__RenderAPI.loadData(rc, pc);
-      return {
-        ok: true,
-        ratingLen: window.ratingHistory?.length ?? -1,
-        playLen:   window.playHistory?.length   ?? -1,
-        hasAPI:    typeof window.__RenderAPI !== 'undefined',
-      };
-    } catch(e) {
-      return { ok: false, error: e.message };
-    }
-  }, ratingCSV, playCSV);
-
-  console.log('loadData result:', loadResult);
-
-  if (!loadResult.ok || loadResult.ratingLen <= 0) {
-    console.error('数据加载失败，终止');
-    await browser.close();
-    process.exit(1);
-  }
-
-  // 等待 songlist 加载
-  await page.waitForFunction(() => Object.keys(window.songMap).length > 0, { timeout: 10000 })
-    .catch(() => console.warn('songlist timeout, continuing without titles'));
-  // ── 存档信息 ──────────────────────────────────
-  await page.evaluate((name, ptt) => {
-    if (name) document.getElementById('pName').textContent = name;
-    if (ptt) {
-      document.getElementById('pPtt').textContent = 'PTT ' + parseFloat(ptt).toFixed(2);
-      window.userPttSet = true;
-    }
-  }, CONFIG.profile.name, CONFIG.profile.ptt);
-
-  // ── 显示设置 ──────────────────────────────────
-  await page.evaluate((s) => {
-    window.settings.showLS        = s.showLS;
-    window.settings.maxPureStyle  = s.maxPureStyle;
-    window.settings.filter        = s.filter;
-    // 同步 UI 状态（不影响渲染，但保持一致）
-    document.getElementById('togLS').checked = s.showLS;
-    document.querySelector(`input[name="mpStyle"][value="${s.maxPureStyle}"]`).checked = true;
-    document.querySelector(`input[name="rankFilter"][value="${s.filter}"]`).checked = true;
-  }, CONFIG.display);
-  await page.evaluate(() => {
-    if (!window.playHistory.length || !window.ratingHistory.length) return;
-
-    // 计算全局最大 B30
-    const filterFunc = FILTERS[window.settings.filter] || null;
-    const { avg, t10avg } = calcBest30(null, filterFunc);
-
-    document.getElementById('sBavg').textContent = avg.toFixed(4);
-    document.getElementById('sT10').textContent = t10avg.toFixed(4);
-
-    // 设置日期范围
-    const first = window.ratingHistory[0];
-    const last = window.ratingHistory[window.ratingHistory.length - 1];
-    document.getElementById('hRange').textContent =
-      first.dateStr.split(' ')[0] + ' ~ ' + last.dateStr.split(' ')[0];
-  });
-  // ── 隐藏 UI 元素 ──────────────────────────────
-  await page.evaluate(() => {
-    document.querySelector('.controls-bar').style.display    = 'none';
-    //document.querySelector('.settings-wrap').style.display = 'none';
-    document.querySelector('#btnProfile').style.display    = 'none';
-  });
-  // 生成时间轴帧列表
-  const frames = await page.evaluate((cfg) => {
-    const history = window.ratingHistory;
-    if (!history.length) return [];
-
-    if (cfg.pttStep) {
-      // 按 PTT 步长插值
-      const minPtt = history[0].rating;
-      const maxPtt = history[history.length - 1].rating;
-      const result = [];
-      for (let ptt = minPtt; ptt <= maxPtt + cfg.pttStep; ptt += cfg.pttStep) {
-        // 找到最近的时间点
-        const point = history.reduce((prev, cur) =>
-          Math.abs(cur.rating - ptt) < Math.abs(prev.rating - ptt) ? cur : prev
-        );
-        result.push({ ts: point.ts, dateStr: point.dateStr, rating: point.rating });
-      }
-      return result;
-    } else {
-      // 直接用每个 rating 点
-      return history.map(d => ({ ts: d.ts, dateStr: d.dateStr, rating: d.rating }));
-    }
-  }, CONFIG);
-
-  console.log(`frames 数量: ${frames.length}`);
-  if (!frames.length) {
-    console.error('帧列表为空，终止');
-    await browser.close();
-    process.exit(1);
-  }
-
-  let frameIndex = 0;
-  let prevFingerprint = null;
-
-  // 辅助：截一帧并保存
-  async function captureFrame() {
-    const filename = path.join(
-      CONFIG.outputDir,
-      `frame_${String(frameIndex).padStart(6, '0')}.png`
-    );
-    await page.screenshot({ path: filename, type: 'png' });
-    frameIndex++;
-  }
-
-  // 辅助：设置透明度
-  async function setOpacity(val) {
-    await page.evaluate(v => window.__RenderAPI.setOpacity(v), val);
-  }
-
-  for (let i = 0; i < frames.length; i++) {
-    const frame = frames[i];
-    process.stdout.write(`\r渲染进度: ${i+1}/${frames.length} (${frame.dateStr})`);
-
-    // 跳转到该时间点（先不截图）
-    await page.evaluate(ts => window.__RenderAPI.seekTo(ts), frame.ts);
-    await page.evaluate(() => window.__RenderAPI.waitForImages());
-    await new Promise(r => setTimeout(r, 600));
-
-    const fingerprint = await page.evaluate(() => window.__RenderAPI.getFingerprint());
-    const changed = fingerprint !== prevFingerprint;
-
-    if (changed && prevFingerprint !== null) {
-      // 透明度到0时切换内容（此时屏幕全黑，看不出切换）
-      await setOpacity(0);
-
-      // ── 淡入新内容 ────────────────────────────
-      for (let f = 0; f < CONFIG.transitionFrames; f++) {
-        const opacity = (f + 1) / CONFIG.transitionFrames;
-        await setOpacity(opacity);
-        await captureFrame();
-      }
-    }
-
-    // 恢复完全不透明
-    await setOpacity(1);
-
-    // ── 停留帧 ────────────────────────────────
-    for (let f = 0; f < CONFIG.framesPerPoint; f++) {
-      await captureFrame();
-    }
-
-    prevFingerprint = fingerprint;
-  }
-
-  // 最后恢复透明度（防止最后一帧残留）
-  await setOpacity(1);
-  console.log(`\n截图完成，共 ${frameIndex} 张`);
-  await browser.close();
+let songMap = {};
+for (const p of ['src/songs/songlist', 'src/songs/songlist.json', 'src/songlist']) {
+  try {
+    const data = JSON.parse(fs.readFileSync(path.join(ROOT, p), 'utf-8'));
+    for (const s of data.songs || []) songMap[s.id] = s.title_localized?.en || s.id;
+    console.log(`[Songlist] loaded ${Object.keys(songMap).length} songs`);
+    break;
+  } catch {}
 }
+
+const OUT = path.resolve(__dirname, CONFIG.outputDir || './frames');
+if (fs.existsSync(OUT)) fs.rmSync(OUT, { recursive: true, force: true });
+fs.mkdirSync(OUT, { recursive: true });
+
+async function main() {
+  const settings = {
+    profile:      CONFIG.profile || { name: 'Player' },
+    showLS:       CONFIG.display?.showLS       ?? true,
+    maxPureStyle: CONFIG.display?.maxPureStyle ?? 'plus',
+    filter:       CONFIG.display?.filter       ?? 'b30',
+  };
+
+  const FILTERS = { b30: null, p30: p => p.far === 0 && p.lost === 0, ls0: p => p.ls === 0 && p.diff >= 2, max: p => p.pure === p.maxPure };
+  const filter = FILTERS[settings.filter] || null;
+
+  const SEC_PER_POINT   = CONFIG.secPerPoint   ?? 1.5;
+  const TRANSITION_SECS = CONFIG.transitionSecs ?? 0.5;
+  const FPS             = CONFIG.fps           ?? 30;
+  const INCLUDE_CHART   = CONFIG.includeChart  ?? true;
+  const INCLUDE_HEADER  = CONFIG.includeHeader ?? true;
+
+  // 提前计算全局最高统计信息（供 Header 静态展示）
+  const globalStats = calcBest30(playHistory, null, filter);
+
+  // ── 构建生成关键帧列表 ──
+  const keyframes = [];
+  if (CONFIG.mode === 'ptt') {
+    let currentTarget = CONFIG.pttStart;
+    for (let ri = 0; ri < ratingHistory.length; ri++) {
+      const rp = ratingHistory[ri];
+      if (currentTarget > CONFIG.pttEnd) break;
+      
+      // 当实际 ptt 达到或超过当前目标时，生成该目标的画面，并且如果跨越了多个目标，就连续生成（保证动画滴答向上跳动）
+      if (rp.rating >= currentTarget) {
+        while (currentTarget <= rp.rating && currentTarget <= CONFIG.pttEnd) {
+          keyframes.push({
+            ri, rp,
+            displayPtt: currentTarget // 视频面板展示不断跳动的整齐 PTT (如 12.01, 12.02)
+          });
+          currentTarget = parseFloat((currentTarget + CONFIG.pttStep).toFixed(4));
+        }
+      }
+    }
+  } else if(CONFIG.mode === 'all') {
+    
+    for (let ri = 0; ri < ratingHistory.length; ri++) {
+      keyframes.push({ ri, rp: ratingHistory[ri], displayPtt: ratingHistory[ri].rating });
+    }
+  } else{
+        // 默认 point 模式，一比一渲染 rating 节点，但是加上了start 和 end 的过滤，方便控制渲染范围
+    for (let ri = 0; ri < ratingHistory.length; ri++) {
+      const rp = ratingHistory[ri];
+      if (rp.rating < CONFIG.pttStart) continue;
+      if (rp.rating > CONFIG.pttEnd) break;
+      keyframes.push({ ri, rp, displayPtt: rp.rating });
+    }
+  }
+  const concatLines = ['ffconcat version 1.0'];
+  let prevFp = '';
+  let imgIdx = 0;
+  let totalSecs = 0;
+  let prevCanvas = null; 
+  let mixCanvas = null;
+  let mixCtx = null;
+
+  console.log(`生成计划: ${keyframes.length} 帧...`);
+
+  for (let k = 0; k < keyframes.length; k++) {
+    const { ri, rp, displayPtt } = keyframes[k];
+    const { b30 } = calcBest30(playHistory, rp.ts, filter);
+    const fp = fingerprint(b30);
+
+    process.stdout.write(`\r${k+1}/${keyframes.length}  帧:${imgIdx} PTT:${displayPtt.toFixed(2)}`);
+
+    if (fp === prevFp && k !== 0 && displayPtt === keyframes[k-1].displayPtt) {
+      // 没有任何变化时，只延长持续时间
+      const lastLineIdx = concatLines.length - 1;
+      const currentDur = parseFloat(concatLines[lastLineIdx].replace('duration ', ''));
+      concatLines[lastLineIdx] = `duration ${(currentDur + SEC_PER_POINT).toFixed(3)}`;
+      totalSecs += SEC_PER_POINT;
+      continue;
+    }
+
+    const canvas = await renderFrame({
+      ratingHistory, b30, ratingIdx: ri, displayPtt, globalStats,
+      chartData: ratingHistory, songMap, settings,
+      includeChart: INCLUDE_CHART, includeHeader: INCLUDE_HEADER
+    });
+
+    if (prevCanvas && TRANSITION_SECS > 0) {
+      const transFrames = Math.round(TRANSITION_SECS * FPS);
+      const frameDur = 1 / FPS;
+
+      if (!mixCanvas) {
+        mixCanvas = createCanvas(canvas.width, canvas.height);
+        mixCtx = mixCanvas.getContext('2d');
+      }
+
+      for (let t = 1; t <= transFrames; t++) {
+        mixCtx.globalAlpha = 1; mixCtx.drawImage(prevCanvas, 0, 0);
+        mixCtx.globalAlpha = t / transFrames; mixCtx.drawImage(canvas, 0, 0);
+        const tFilename = `frame_${String(imgIdx).padStart(6,'0')}.png`;
+        fs.writeFileSync(path.join(OUT, tFilename), mixCanvas.toBuffer('image/png'));
+        concatLines.push(`file '${path.join(OUT, tFilename).replace(/\\/g, '/')}'`);
+        concatLines.push(`duration ${frameDur.toFixed(3)}`);
+        imgIdx++; totalSecs += frameDur;
+      }
+    }
+
+    const mainFilename = `frame_${String(imgIdx).padStart(6,'0')}.png`;
+    fs.writeFileSync(path.join(OUT, mainFilename), canvas.toBuffer('image/png'));
+    concatLines.push(`file '${path.join(OUT, mainFilename).replace(/\\/g, '/')}'`);
+    
+    const holdSecs = k === 0 ? SEC_PER_POINT : (SEC_PER_POINT - TRANSITION_SECS);
+    concatLines.push(`duration ${Math.max(0.1, holdSecs).toFixed(3)}`);
+
+    prevCanvas = canvas; prevFp = fp; imgIdx++; totalSecs += holdSecs;
+  }
+
+  if (imgIdx > 0) {
+    const lastFile = `frame_${String(imgIdx-1).padStart(6,'0')}.png`;
+    concatLines.push(`file '${path.join(OUT, lastFile).replace(/\\/g, '/')}'`);
+  }
+
+  const concatPath = path.join(OUT, 'concat.txt');
+  fs.writeFileSync(concatPath, concatLines.join('\n'));
+  console.log(`\n完成：共生成 ${imgIdx} 张图片，总时长预计 ${totalSecs.toFixed(1)}s`);
+}
+
 main().catch(console.error);

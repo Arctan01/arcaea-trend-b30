@@ -734,7 +734,7 @@ function roundRect(c, x, y, w, h, r) {
 // ── chart drawing on any ctx ──────────────────────
 function drawChartOnCtx(c, W, H) {
   if (!chartData.length) return;
-  const P={t:14,r:14,b:42,l:54};
+  const P={t:14,r:24,b:42,l:45};
   const CW=W-P.l-P.r, CH=H-P.t-P.b;
   const vals=chartData.map(d=>d.rating);
   const mn=Math.min(...vals)-.08, mx=Math.max(...vals)+.08;
@@ -757,13 +757,20 @@ function drawChartOnCtx(c, W, H) {
   c.beginPath(); c.moveTo(xOf(0),yOf(chartData[0].rating));
   for (let i=1;i<chartData.length;i++) c.lineTo(xOf(i),yOf(chartData[i].rating));
   c.strokeStyle='#b070ff'; c.lineWidth=2; c.setLineDash([]); c.stroke();
+  
   const step=Math.max(1,Math.floor(chartData.length/6));
-  c.fillStyle='#9896c8'; c.font='bold 11px Exo-Regular,sans-serif'; c.textAlign='center'; c.setLineDash([]);
+  c.fillStyle='#9896c8'; c.font='bold 11px Exo-Regular,sans-serif'; c.setLineDash([]);
   for (let i=0;i<chartData.length;i+=step){
     const x2=xOf(i);
     c.strokeStyle='#3a3860'; c.lineWidth=1;
     c.beginPath(); c.moveTo(x2,H-P.b); c.lineTo(x2,H-P.b+4); c.stroke();
+    
+    const isFirst = (i === 0);
+    const isLast = (i + step >= chartData.length);
+    c.textAlign = isFirst ? 'left' : (isLast ? 'right' : 'center');
+    
     const parts=chartData[i].dateStr.split(' ');
+    // 【修复】：使用 c.fillText 绘制到导出图片上
     c.fillText(parts[0],x2,H-P.b+16);
     if (parts[1]) c.fillText(parts[1],x2,H-P.b+28);
   }
@@ -1077,7 +1084,7 @@ function drawChart() {
     ctx.fillText('上传 Rating History CSV 后显示折线图', W/2, H/2);
     return;
   }
-  const P={t:14,r:14,b:42,l:54};
+  const P={t:14,r:24,b:42,l:45};
   const CW=W-P.l-P.r, CH=H-P.t-P.b;
   const vals=chartData.map(d=>d.rating);
   const mn=Math.min(...vals)-.08, mx=Math.max(...vals)+.08;
@@ -1100,6 +1107,7 @@ function drawChart() {
   ctx.beginPath(); ctx.moveTo(xOf(0),yOf(chartData[0].rating));
   for (let i=1;i<chartData.length;i++) ctx.lineTo(xOf(i),yOf(chartData[i].rating));
   ctx.strokeStyle='#b070ff'; ctx.lineWidth=2; ctx.setLineDash([]); ctx.stroke();
+  
   if (hoverIdx>=0 && hoverIdx<chartData.length) {
     const hx=xOf(hoverIdx), hy=yOf(chartData[hoverIdx].rating);
     ctx.beginPath(); ctx.moveTo(hx,P.t); ctx.lineTo(hx,H-P.b);
@@ -1110,12 +1118,18 @@ function drawChart() {
     ctx.strokeStyle='rgba(255,255,255,.8)'; ctx.lineWidth=1.5; ctx.stroke();
   }
   const step=Math.max(1,Math.floor(chartData.length/6));
-  ctx.fillStyle='#9896c8'; ctx.font='bold 11px Exo-Regular,sans-serif'; ctx.textAlign='center'; ctx.setLineDash([]);
+  ctx.fillStyle='#9896c8'; ctx.font='bold 11px Exo-Regular,sans-serif'; ctx.setLineDash([]);
   for (let i=0;i<chartData.length;i+=step) {
     const x=xOf(i);
     ctx.strokeStyle='#3a3860'; ctx.lineWidth=1;
     ctx.beginPath(); ctx.moveTo(x,H-P.b); ctx.lineTo(x,H-P.b+4); ctx.stroke();
+    
+    const isFirst = (i === 0);
+    const isLast = (i + step >= chartData.length);
+    ctx.textAlign = isFirst ? 'left' : (isLast ? 'right' : 'center');
+    
     const parts=chartData[i].dateStr.split(' ');
+    // 这里是对网页画布渲染
     ctx.fillText(parts[0], x, H-P.b+16);
     if (parts[1]) ctx.fillText(parts[1], x, H-P.b+28);
   }
@@ -1130,10 +1144,12 @@ canvas.addEventListener('mousemove', throttle(function(e) {
   if (!chartData.length) return;
   const rect=canvas.getBoundingClientRect();
   const mx=e.clientX-rect.left;
-  const PL=50, PR=14;
+  // 同步图表边距，使其与实际渲染挂钩
+  const PL=45, PR=24; 
   const cssW=parseInt(canvas.style.width||canvas.width);
-  const norm=(mx-PL)/(cssW-PL-PR);
-  hoverIdx=Math.max(0,Math.min(chartData.length-1,Math.round(norm*(chartData.length-1))));
+  // 防止越界
+  const norm=Math.max(0, Math.min(1, (mx-PL)/(cssW-PL-PR))); 
+  hoverIdx=Math.round(norm*(chartData.length-1));
   drawChart();
   const d=chartData[hoverIdx];
   hoverTs = parseDateStr(d.dateStr)||d.ts;

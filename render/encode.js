@@ -1,26 +1,28 @@
+'use strict';
 const ffmpeg = require('fluent-ffmpeg');
-const path = require('path');
+const path   = require('path');
+const CONFIG = require('./config.json');
 
-const CONFIG = {
-  framesDir: './frames',
-  fps: 30,
-  output: './b30-timelapse.mp4',
-  // 视频质量 0-51，越低越好
-  crf: 10,
-};
+const outDir = path.resolve(__dirname, CONFIG.outputDir || './frames');
+const concatFile = path.join(outDir, 'concat.txt');
+const outputFile = path.resolve(__dirname, CONFIG.output || './b30-timelapse.mp4');
+
+console.log(`开始编码: 正在处理序列帧 ${concatFile} ...`);
 
 ffmpeg()
-  .input(path.join(CONFIG.framesDir, 'frame_%06d.png'))
-  .inputFPS(CONFIG.fps)
+  .input(concatFile)
+  .inputOptions(['-f concat', '-safe 0'])
   .videoCodec('libx264')
   .outputOptions([
-    `-crf ${CONFIG.crf}`,
-    '-pix_fmt yuv420p',   // 兼容性最好
-    '-preset slow',       // 压缩率和速度的平衡
+    '-crf 14',           //数值越大，画质越差，但生成的文件越小 
+    '-pix_fmt yuv420p',
+    '-preset slow',
+    `-r ${CONFIG.fps || 30}`,  
   ])
-  .output(CONFIG.output)
-  .on('start', cmd => console.log('ffmpeg:', cmd))
-  .on('progress', p => process.stdout.write(`\r编码进度: ${Math.round(p.percent || 0)}%`))
-  .on('end', () => console.log(`\n完成：${CONFIG.output}`))
-  .on('error', err => console.error('ffmpeg error:', err))
+  .output(outputFile)
+  .on('progress', p => {
+    process.stdout.write(`\r编码中: 已处理 ${p.frames} 帧 ...`);
+  })
+  .on('end', () => console.log('\n✅ 视频导出成功: ', outputFile))
+  .on('error', e => console.error('\n❌ 导出失败 (FFmpeg Error):', e))
   .run();
