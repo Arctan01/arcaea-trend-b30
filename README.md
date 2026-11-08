@@ -2,7 +2,7 @@
 
 基于查分机器人导出数据的 Arcaea B50 可视化工具，支持历史 PTT 折线图与多模式排行查看，以及本地视频导出功能。
 
-![预览图](./src/description/1.png)
+![预览图](./src/description/4.png)
 
 ## 潜力值与版本切换
 
