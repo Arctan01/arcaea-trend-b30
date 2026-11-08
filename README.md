@@ -1,30 +1,41 @@
-# Arcaea B30 Viewer
+# Arcaea B50 Viewer
 
-基于查分机器人导出数据的 Arcaea B30 可视化工具，支持历史 PTT 折线图与多模式排行查看，以及本地视频导出功能。
+基于查分机器人导出数据的 Arcaea B50 可视化工具，支持历史 PTT 折线图与多模式排行查看，以及本地视频导出功能。
 
 ![预览图](./src/description/1.png)
 
+## 潜力值与版本切换
+
+默认使用新版 B50，按 5 列 × 10 行显示；“旧版 B30”按钮恢复 3 列 × 10 行及旧版无通关加成的计算。卡片字体、尺寸、间距与配色保持原有设计。
+
+新版单曲潜力值由分数、定数与 ClearType 计算，非 TL 额外 +0.2，不重复叠加 CSV 的 Potential。理论最高 PTT 为 `(Best50 总和 + Best10 总和) / 60`；旧版为 `(Best30 总和 + Best10 总和) / 40`。未满数量时空位按 0 计算。
+
+新导出的 Rating CSV 十倍数值会自动还原（如 130.53 → 13.053）。历史图表保留 CSV 的实际 PTT；理论 Max 与实际历史 PTT 可能不同。
+
+`node --test tests/rating.test.js` 可校验公式与本地 `data/example/new` 样例（样例未随仓库提交时自动跳过）。
+
 ## 功能
 
-- **PTT 折线图**：展示历史潜力值变化，鼠标悬停在任意时间点可查看当时的 B30，移出后保持显示
-- **多排行模式**：B30 / P30（Far=0 且 Lost=0）/ LS0·30（LS=0）/ MAX·30（Pure=MaxPure）
-- **B30 & TOP10 Avg**：同时显示 Best30 平均值与 Top10 平均值
+- **PTT 折线图**：展示历史潜力值变化，鼠标悬停在任意时间点可查看当时的 B50，移出后保持显示
+- **多排行模式**：B50 / P50（Far=0 且 Lost=0）/ LS0·50（LS=0）/ MAX·50（Pure=MaxPure）
+- **B50 & TOP10 Avg**：同时显示 Best50 平均值与 Top10 平均值
 - **显示设置**：可切换 LS 显示、MaxPure 样式（`+maxPure` 或 `-(Pure-MaxPure)`）
 - **存档信息**：手动填写用户名与潜力值，CSV 导入的最高 PTT 另行标注不覆盖
-- **定数查询模式**：给定特定定数范围，展示 B30 / P30 等数据，支持展开全部及多种排序方式
-- **图片导出**：导出当前 B30 卡片为 PNG，可选择是否包含 PTT 折线图和存档信息
+- **定数查询模式**：给定特定定数范围，展示 B50 / P50 等数据，支持展开全部及多种排序方式
+- **图片导出**：导出当前 B50 卡片为 PNG，可选择是否包含 PTT 折线图和存档信息
 - **视频导出**：本地 Node.js 驱动，纯 Canvas 渲染，生成 PTT 成长历程视频
 
 ## 目录结构
 
 ```
+├── rating.js             # 页面与视频共用的潜力值计算
 ├── index.html
 ├── package.json          # 视频导出依赖（可选）
 ├── render/               # 视频导出脚本（可选）
 │   ├── config.json       # 渲染配置
 │   ├── render.js         # 主渲染脚本（node-canvas）
 │   ├── draw.js           # Canvas 绘制逻辑
-│   ├── parse.js          # CSV 解析与 B30 计算
+│   ├── parse.js          # CSV 解析与 B50 计算
 │   └── encode.js         # ffmpeg 合成脚本
 ├── data/                 # 视频导出用的数据文件（不提交到 git）
 │   ├── ratings.csv
@@ -75,7 +86,7 @@ abstrusedilemma,2,9847862,11.3,12.53931,429.4,1237,1432,25,10,5,1719849794709,"2
 
 ### 在线访问（推荐）
 
-1. 访问 [Arcaea B30 Viewer](https://arctan01.github.io/arcaea-trend-b30/)
+1. 访问 [Arcaea B50 Viewer](https://arctan01.github.io/arcaea-trend-b30/)
 2. 上传 Rating CSV (`ratings.csv`) 和 Play CSV (`all_scores.csv`)
 
 ### GitHub Pages
@@ -141,7 +152,8 @@ brew install ffmpeg
 | `includeHeader` | `true` | 是否在画面中包含存档信息和统计数据 |
 | `profile.name` | `""` | 用户名，留空则不显示 |
 | `profile.ptt` | `""` | 显示的 PTT 值，留空则不显示（已弃用） |
-| `display.filter` | `"b30"` | 排行模式：`b30` / `p30` / `ls0` / `max` |
+| `display.rankSize` | `50` / `30` | 新版 B50（默认）或旧版 B30 |
+| `display.filter` | `"b30"` | 排行筛选键（兼容旧配置）：`b30` / `p30` / `ls0` / `max` |
 | `display.maxPureStyle` | `"plus"` | MaxPure 样式：`plus`（+maxPure）/ `minus`（−shift） |
 | `display.showLS` | `true` | 是否显示 LS 字段 |
  

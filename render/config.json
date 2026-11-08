@@ -3,7 +3,7 @@
   "ratingCSV": "../data/ratings.csv", 
   "playCSV": "../data/all_scores.csv", 
   "profile": {
-    "name": "",
+    "name": "Arctan01",
     "ptt": ""
   },
   "display": {
@@ -13,10 +13,10 @@
   },
   "outputDir": "./frames",
   "output": "./b30-timelapse.mp4",
-  "mode": "",
-  "pttStart": 12.90,
-  "pttEnd": 13.00,
-  "pttStep": 0.1,
+  "mode": "point",
+  "pttStart": 12.98,
+  "pttEnd": 13.10,
+  "pttStep": 0.05,
   "fps": 30,
   "secPerPoint": 1.5,
   "transitionSecs": 0.5,

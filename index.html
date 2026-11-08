@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Arcaea B30 Viewer</title>
+<title>Arcaea B50 Viewer</title>
 <style>
 @font-face {
   font-family: 'Exo-Regular';
@@ -40,7 +40,7 @@
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 body{background:var(--bg);color:var(--text);font-family:'GeosansLight',sans-serif;min-height:100vh;overflow-x:hidden;}
 body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellipse 70% 50% at 15% 5%,rgba(120,60,220,.10) 0%,transparent 55%),radial-gradient(ellipse 50% 70% at 85% 90%,rgba(50,90,200,.07) 0%,transparent 55%);pointer-events:none;z-index:0;}
-.wrap{max-width:1100px;margin:0 auto;padding:28px 20px 48px;position:relative;z-index:1}
+.wrap{max-width:1812px;margin:0 auto;padding:28px 20px 48px;position:relative;z-index:1}
  
 /* ── controls bar (top) ── */
 .controls-bar{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:14px 18px;margin-bottom:16px;}
@@ -174,16 +174,23 @@ input[type=file]{display:none;}
         <div class="setting-label">模式</div>
         <div class="seg-ctrl">
           <input type="radio" name="displayMode" id="dmB30" value="b30" checked>
-          <label for="dmB30">B30</label>
+          <label for="dmB30" id="rankModeLabel">B50</label>
           <input type="radio" name="displayMode" id="dmCQ" value="cq">
           <label for="dmCQ">定数查询</label>
         </div>
       </div>
       <div class="setting-item">
+        <div class="setting-label">版本</div>
+        <div class="seg-ctrl">
+          <input type="radio" name="rankVersion" id="rv50" value="50" checked><label for="rv50">B50</label>
+          <input type="radio" name="rankVersion" id="rv30" value="30"><label for="rv30">旧版 B30</label>
+        </div>
+      </div>
+      <div class="setting-item">
         <div class="setting-label">排行</div>
         <div class="seg-ctrl">
-          <input type="radio" name="rankFilter" id="rfB30" value="b30" checked><label for="rfB30">B30</label>
-          <input type="radio" name="rankFilter" id="rfP30" value="p30"><label for="rfP30">P30</label>
+          <input type="radio" name="rankFilter" id="rfB30" value="b30" checked><label for="rfB30">B50</label>
+          <input type="radio" name="rankFilter" id="rfP30" value="p30"><label for="rfP30">P50</label>
           <input type="radio" name="rankFilter" id="rfLS0" value="ls0"><label for="rfLS0">LS0</label>
           <input type="radio" name="rankFilter" id="rfMax" value="max"><label for="rfMax">MAX</label>
         </div>
@@ -229,21 +236,21 @@ input[type=file]{display:none;}
   <div class="player-header">
     <div>
       <div class="player-name">
-        <span id="pName">Arcaea Best 30</span>
+        <span id="pName">Arcaea Best 50</span>
         <span class="ptt-pill" id="pPtt">PTT —</span>
         <span class="ptt-pill" id="pMaxPtt" style="background:linear-gradient(135deg,#204080,#102860);border-color:#4080c0;display:none">Max —</span>
       </div>
     </div>
   </div>
   <div class="stats-row" id="statsRow">
-    <div class="stat">BEST30 Avg <b id="sBavg" style="min-width:52px;display:inline-block">—</b></div>
+    <div class="stat"><span id="bestAvgLabel">BEST50 Avg</span> <b id="sBavg" style="min-width:52px;display:inline-block">—</b></div>
     <div class="stat">TOP10 Avg <b id="sT10" style="min-width:52px;display:inline-block">—</b></div>
     <div class="stat">Date Range <b id="hRange" style="min-width:160px;display:inline-block">—</b></div>
   </div>
  
   <!-- Chart -->
   <div class="chart-wrap">
-    <div class="sec-lbl">RATING HISTORY — 悬停查看 B30 · 移出后保持</div>
+    <div class="sec-lbl">RATING HISTORY — 悬停查看排行 · 移出后保持</div>
     <canvas id="ratingChart"></canvas>
     <div class="c-tip" id="cTip">
       <div class="ct-date" id="tipDate"></div>
@@ -266,6 +273,7 @@ input[type=file]{display:none;}
  
 </div>
  
+<script src="rating.js"></script>
 <script>
 // ── state ────────────────────────────────────────
 window.ratingHistory = [];
@@ -287,9 +295,10 @@ const FILTERS = {
   ls0: p => p.ls === 0 && p.diff >= 2,
   max: p => p.pure === p.maxPure,
 };
-const FILTER_LABELS = { b30:'B30', p30:'P30', ls0:'LS0·30', max:'MAX·30' };
+const FILTER_LABELS = { b30:'B50', p30:'P50', ls0:'LS0·50', max:'MAX·50' };
  
 window.settings = {
+  rankSize: 50,
   filter: 'b30',
   displayMode: 'b30',
   showLS: true,
@@ -430,7 +439,7 @@ async function resolveImgBase64(songId, diff) {
  
 // ── SVG constants ─────────────────────────────────
 const SV = {
-  COLS:3, CARD_W:348, CARD_H:82, GAP:8, COVER:82,
+  COLS:5, CARD_W:348, CARD_H:82, GAP:8, COVER:82,
   BODY_X:94,   // cover(82)+gap(3)+accent(3)+pad(6)
   R1_Y:20, R2_Y:54, R3_Y:66, DATE_Y:74,
   BG:'#181b2e', SURF2:'#1e2238',
@@ -537,12 +546,12 @@ function buildHeaderSVG({ mode='b30', dateOrRange='', avg='', t10='', mxptt='', 
   }
 
   // B30 mode
-  const title = (FILTER_LABELS[settings.filter]||'B30').toUpperCase();
+  const title = (FILTER_LABELS[settings.filter]||'B50').toUpperCase();
   return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${svgW} ${H}" width="${svgW}" height="${H}" style="max-width:100%;height:auto">
   <text x="${COL.title}" y="20" font-family="Exo-Regular" font-size="11" font-weight="700" fill="#525080">${title}</text>
   <text x="${COL.date}"  y="20" font-family="Exo-Regular" font-size="13" font-weight="600" fill="#80c4ff">${dateOrRange}</text>
   ${avg ? `
-  <text x="${COL.avg}" y="20" font-family="Exo-Regular" font-size="11" fill="#9896c8">B30Avg <tspan fill="#c8a0ff" font-weight="700">${avg}</tspan></text>
+  <text x="${COL.avg}" y="20" font-family="Exo-Regular" font-size="11" fill="#9896c8">B${settings.rankSize}Avg <tspan fill="#c8a0ff" font-weight="700">${avg}</tspan></text>
   <text x="${COL.t10}" y="20" font-family="Exo-Regular" font-size="11" fill="#9896c8">T10Avg <tspan fill="#c8a0ff" font-weight="700">${t10}</tspan></text>
   <text x="${COL.mx}"  y="20" font-family="Exo-Regular" font-size="11" fill="#9896c8">Max <tspan fill="#c8a0ff" font-weight="700">${mxptt}</tspan></text>
   ` : ''}
@@ -619,7 +628,7 @@ async function exportToCanvas(list, { includeChart=false, includeHeader=false }=
     const rangeVal= document.getElementById('hRange').textContent;
 
     const statsItems = [
-      { label:'BEST30 Avg ',  val:bavgVal, valW:52  },
+      { label:`BEST${settings.rankSize} Avg `,  val:bavgVal, valW:52  },
       { label:'TOP10 Avg ',  val:t10Val,  valW:52  },
       { label:'Date Range ', val:rangeVal,valW:160 },
     ];
@@ -664,7 +673,7 @@ async function exportToCanvas(list, { includeChart=false, includeHeader=false }=
   const dateOrRange = hp.dateOrRange || '';
   const exportAvg   = list.length ? list.reduce((s,x)=>s+x.potential,0)/list.length : 0;
   const exportT10   = list.length ? list.slice(0,10).reduce((s,x)=>s+x.potential,0)/Math.min(10,list.length) : 0;
-  const exportMx    = (!isCQ) ? (exportAvg*3+exportT10)/4 : null;
+  const exportMx    = (!isCQ) ? maxPotential(list) : null;
 
 
   c.textAlign = 'left';
@@ -685,14 +694,14 @@ async function exportToCanvas(list, { includeChart=false, includeHeader=false }=
       c.fillText(exportAvg.toFixed(4), avgX + c.measureText('Avg ').width, y+18);
     }
   } else {
-    const title = (FILTER_LABELS[settings.filter]||'B30').toUpperCase();
+    const title = (FILTER_LABELS[settings.filter]||'B50').toUpperCase();
     c.font = 'bold 11px Exo-Regular, sans-serif'; c.fillStyle = '#525080';
     c.fillText(title, COL.title, y+18);
     c.font = '600 13px Exo-Regular, sans-serif'; c.fillStyle = '#80c4ff';
     c.fillText(dateOrRange, COL.date, y+19);
     if (exportAvg) {
       const statCols = [
-        { label:'B30Avg ', val:exportAvg.toFixed(4), x:COL.avg },
+        { label:`B${settings.rankSize}Avg `, val:exportAvg.toFixed(4), x:COL.avg },
         { label:'T10Avg ', val:exportT10.toFixed(4), x:COL.t10 },
         ...(exportMx !== null ? [{ label:'Max ', val:exportMx.toFixed(4), x:COL.mx }] : []),
       ];
@@ -901,61 +910,13 @@ async function drawCardOnCtx(c, p, i, x0, y0,imgObjMap) {
 
 
 // ── CSV parsers ───────────────────────────────────
-function parseRatingCSV(txt) {
-  return txt.trim().split('\n').slice(1).map(l => {
-    const p = l.split(',');
-    if (p.length < 3) return null;
-    const ts = toMs(parseInt(p[0].trim()));
-    const dateStr = p[1].trim().replace(/^"|"$/g,'');
-    const rating = parseFloat(p[2].trim());
-    return isNaN(ts)||isNaN(rating) ? null : { ts, dateStr, rating };
-  }).filter(Boolean).sort((a,b)=>a.ts-b.ts);
-}
- 
-function parsePlayCSV(txt) {
-  return txt.trim().split('\n').slice(1).map(l => {
-    const p = l.match(/(".*?"|[^,]+|(?<=,)(?=,)|^(?=,)|(?<=,)$)/g) || l.split(',');
-    const clean = p.map(x => x.replace(/^"|"$/g,'').trim());
-    if (clean.length < 12) return null;
-    const ts = toMs(parseInt(clean[11]));
-    const constant = parseFloat(clean[3]);
-    const potential = parseFloat(clean[4]);
-    const score = parseInt(clean[2]);
-    if (isNaN(ts)||isNaN(constant)||isNaN(potential)) return null;
-    return {
-      songId:clean[0], diff:parseInt(clean[1]||'0'),
-      score, constant, potential,
-      ls:parseFloat(clean[5])||0,
-      maxPure:parseInt(clean[6])||0,
-      pure:parseInt(clean[7])||0,
-      far:parseInt(clean[8])||0,
-      lost:parseInt(clean[9])||0,
-      clearType:parseInt(clean[10])||0,
-      ts, dateStr:clean[12]||'',
-    };
-  }).filter(Boolean);
-}
- 
-// ── B30 calc ─────────────────────────────────────
+const { parseRatingCSV, parsePlayCSV } = ArcaeaRating;
 function calcBest30(ts=null, filter=null) {
-  const EPS = 0.000001;
-  const best = new Map();
-  for (const p of playHistory) {
-    if (ts !== null && p.ts > ts) continue;
-    const k = p.songId+'_'+p.diff;
-    const ex = best.get(k);
-    if (!ex || p.potential>ex.potential+EPS || (Math.abs(p.potential-ex.potential)<=EPS && p.score>ex.score))
-      best.set(k, p);
-  }
-  const all = [...best.values()]
-    .filter(p => filter ? filter(p) : true)
-    .sort((a,b) => { const d=b.potential-a.potential; return Math.abs(d)>EPS?d:b.score-a.score; });
-  const top = all.slice(0,30);
-  const avg = top.length ? top.reduce((s,x)=>s+x.potential,0)/top.length : 0;
-  const t10avg = top.slice(0,10).reduce((s,x)=>s+x.potential,0)/Math.min(10,top.length)||0;
-  return { b30:top, avg, t10avg, total:all.length, all };
+  const result = ArcaeaRating.calcBest(playHistory, ts, filter, settings.rankSize);
+  return { ...result, b30: result.top };
 }
- 
+function maxPotential(list) { return ArcaeaRating.maxPotential(list, settings.rankSize); }
+
 function calcB30(ts) { return calcBest30(ts, FILTERS[settings.filter]); }
  
 // ── render helpers ────────────────────────────────
@@ -970,7 +931,7 @@ function renderB30(b30, dateLabel) {
   if (b30.length) {
     const avg   = b30.reduce((s,x)=>s+x.potential,0)/b30.length;
     const t10   = b30.slice(0,10).reduce((s,x)=>s+x.potential,0)/Math.min(10,b30.length);
-    const mxptt = (avg*3+t10)/4;
+    const mxptt = maxPotential(b30);
     document.getElementById('b30AL')  && (document.getElementById('b30AL').textContent = avg.toFixed(4));
     document.getElementById('b30T10') && (document.getElementById('b30T10').textContent = t10.toFixed(4));
     document.getElementById('b30mx')  && (document.getElementById('b30mx').textContent  = mxptt.toFixed(4));
@@ -982,7 +943,7 @@ function renderB30(b30, dateLabel) {
     dateOrRange: dateLabel,
     avg: b30.length ? (b30.reduce((s,x)=>s+x.potential,0)/b30.length).toFixed(4) : '',
     t10: b30.length ? (b30.slice(0,10).reduce((s,x)=>s+x.potential,0)/Math.min(10,b30.length)).toFixed(4) : '',
-    mxptt: b30.length ? ((b30.reduce((s,x)=>s+x.potential,0)/b30.length*3 + b30.slice(0,10).reduce((s,x)=>s+x.potential,0)/Math.min(10,b30.length))/4).toFixed(4) : '',
+    mxptt: b30.length ? maxPotential(b30).toFixed(4) : '',
     count: undefined,
   };
   const wrap = document.getElementById('gridWrap');
@@ -1005,7 +966,7 @@ function updateStaticStats() {
   document.getElementById('sT10').textContent  = t10avg.toFixed(4);
   if (ratingHistory.length) {
     const maxPtt = ratingHistory[ratingHistory.length-1].rating;
-    if (!userPttSet) document.getElementById('pPtt').textContent = 'PTT '+maxPtt.toFixed(2);
+    if (!userPttSet) document.getElementById('pPtt').textContent = 'PTT '+maxPtt.toFixed(3);
   }
 }
  
@@ -1023,7 +984,7 @@ function runCQ(ts=null) {
       if (sort==='recent')    return b.ts-a.ts;
       return 0;
     });
-  const shown = showAll ? all : all.slice(0,30);
+  const shown = showAll ? all : all.slice(0,settings.rankSize);
   shownList = shown;
   const avg = all.length ? all.reduce((s,x)=>s+x.potential,0)/all.length : 0;
   updateHeaderSVG({ mode:'cq', dateOrRange:`${min} ~ ${max}`, avg:avg.toFixed(4), count:all.length });
@@ -1037,10 +998,10 @@ function runCQ(ts=null) {
   wrap.innerHTML = all.length ? buildGridSVG(shown)
     : '<div class="empty-state"><div class="ei">♪</div>该区间暂无记录</div>';
   const expWrap = document.getElementById('cqExpandWrap');
-  if (!showAll && all.length > 30) {
+  if (!showAll && all.length > settings.rankSize) {
     expWrap.innerHTML = `<div class="cq-expand" id="cqExpandBtn">▼ 显示全部 (${all.length} 条)</div>`;
     document.getElementById('cqExpandBtn').addEventListener('click', ()=>{ cqState.showAll=true; runCQ(lastQueryTs); });
-  } else if (showAll && all.length > 30) {
+  } else if (showAll && all.length > settings.rankSize) {
     expWrap.innerHTML = `<div class="cq-expand" id="cqCollapseBtn">▲ 收起</div>`;
     document.getElementById('cqCollapseBtn').addEventListener('click', ()=>{ cqState.showAll=false; runCQ(lastQueryTs); });
   } else {
@@ -1157,8 +1118,8 @@ canvas.addEventListener('mousemove', throttle(function(e) {
   const { b30, avg, t10avg } = calcB30(hoverTs);
   const tip=document.getElementById('cTip');
   document.getElementById('tipDate').textContent = d.dateStr;
-  document.getElementById('tipPtt').textContent  = 'PTT '+d.rating.toFixed(2);
-  document.getElementById('tipB30').textContent  = `B30 ${avg.toFixed(4)}  ·  T10 ${t10avg.toFixed(4)}  ·  ${b30.length} 曲`;
+  document.getElementById('tipPtt').textContent  = 'PTT '+d.rating.toFixed(3);
+  document.getElementById('tipB30').textContent  = `B${settings.rankSize} ${avg.toFixed(4)}  ·  T10 ${t10avg.toFixed(4)}  ·  ${b30.length} 曲`;
   tip.style.display='block';
   let tx=e.clientX-rect.left+14, ty=e.clientY-rect.top-10;
   if (tx+210>rect.width) tx-=220;
@@ -1185,7 +1146,7 @@ document.getElementById('f1').addEventListener('change', function(e) {
     document.getElementById('s1').className='fstat ok';
     if (ratingHistory.length) {
       const first=ratingHistory[0], last=ratingHistory[ratingHistory.length-1];
-      if (!userPttSet) document.getElementById('pPtt').textContent='PTT '+last.rating.toFixed(2);
+      if (!userPttSet) document.getElementById('pPtt').textContent='PTT '+last.rating.toFixed(3);
       document.getElementById('hRange').textContent=first.dateStr.split(' ')[0]+' ~ '+last.dateStr.split(' ')[0];
     }
     resizeCanvas();
@@ -1233,7 +1194,7 @@ document.getElementById('btnModalOk').addEventListener('click', ()=>{
     document.getElementById('pPtt').textContent='PTT '+parseFloat(ptt).toFixed(2);
     userPttSet=true;
     if (ratingHistory.length) {
-      const maxPtt=ratingHistory[ratingHistory.length-1].rating.toFixed(2);
+      const maxPtt=ratingHistory[ratingHistory.length-1].rating.toFixed(3);
       document.getElementById('pMaxPtt').textContent='Max '+maxPtt;
       document.getElementById('pMaxPtt').style.display='';
     }
@@ -1243,6 +1204,23 @@ document.getElementById('btnModalOk').addEventListener('click', ()=>{
 document.getElementById('profileModal').addEventListener('click', function(e){ if(e.target===this) this.classList.remove('open'); });
  
 // ── settings events ───────────────────────────────
+document.querySelectorAll('input[name="rankVersion"]').forEach(r=>r.addEventListener('change', function(){
+  settings.rankSize = Number(this.value);
+  SV.COLS = settings.rankSize === 50 ? 5 : 3;
+  document.querySelector('.wrap').style.maxWidth = settings.rankSize === 50 ? '1812px' : '1100px';
+  FILTER_LABELS.b30 = `B${settings.rankSize}`;
+  FILTER_LABELS.p30 = `P${settings.rankSize}`;
+  FILTER_LABELS.ls0 = `LS0·${settings.rankSize}`;
+  FILTER_LABELS.max = `MAX·${settings.rankSize}`;
+  document.getElementById('rankModeLabel').textContent = FILTER_LABELS.b30;
+  document.querySelector('label[for="rfB30"]').textContent = FILTER_LABELS.b30;
+  document.querySelector('label[for="rfP30"]').textContent = FILTER_LABELS.p30;
+  document.getElementById('bestAvgLabel').textContent = `BEST${settings.rankSize} Avg`;
+  if (/^Arcaea Best (30|50)$/.test(document.getElementById('pName').textContent)) document.getElementById('pName').textContent = `Arcaea Best ${settings.rankSize}`;
+  updateStaticStats();
+  rerenderCurrent();
+  resizeCanvas();
+}));
 document.getElementById('togLS').addEventListener('change', function(){ settings.showLS=this.checked; rerenderCurrent(); });
 document.querySelectorAll('input[name="mpStyle"]').forEach(r=>r.addEventListener('change',function(){ settings.maxPureStyle=this.value; rerenderCurrent(); }));
 document.querySelectorAll('input[name="rankFilter"]').forEach(r=>r.addEventListener('change',function(){ settings.filter=this.value; rerenderCurrent(); }));
@@ -1292,7 +1270,7 @@ document.getElementById('btnExport').addEventListener('click', async function() 
     const blob = await exportToCanvas(list, { includeChart, includeHeader });
     const a = document.createElement('a');
     a.href = URL.createObjectURL(blob);
-    a.download = `b30-${(shownDate||'export').replace(/[\s:\/]/g,'-')}.png`;
+    a.download = `b${settings.rankSize}-${(shownDate||'export').replace(/[\s:\/]/g,'-')}.png`;
     a.click();
     setTimeout(()=>URL.revokeObjectURL(a.href), 5000);
   } catch(e) { console.error('导出失败',e); alert('导出失败: '+e.message); }

@@ -1,6 +1,7 @@
 'use strict';
 const { createCanvas, loadImage, registerFont } = require('canvas');
 const path = require('path');
+const { maxPotential } = require('../rating');
 
 const ROOT = path.resolve(__dirname, '..');
 registerFont(path.join(ROOT, 'src/Fonts/Exo-Regular.ttf'),  { family: 'Exo-Regular', weight: 'normal' });
@@ -12,7 +13,7 @@ registerFont(path.join(ROOT, 'src/Fonts/GeosansLight.ttf'), { family: 'GeosansLi
 registerFont(path.join(ROOT, 'src/Fonts/GeosansLight.ttf'), { family: 'GeosansLight', weight: 'bold' });
 
 const SV = {
-  COLS:3, CARD_W:348, CARD_H:82, GAP:8, COVER:82,
+  CARD_W:348, CARD_H:82, GAP:8, COVER:82,
   BODY_X:94, R1_Y:20, R2_Y:54, DATE_Y:74,
   BG:'#181b2e', SURF2:'#1e2238',
   TEXT:'#eae8ff', TEXT2:'#9896c8', TEXT3:'#525080',
@@ -183,9 +184,11 @@ function drawChart(c, W, H, chartData) {
 }
 
 async function renderFrame({ ratingHistory, b30, ratingIdx, displayPtt, globalStats, chartData, songMap, settings, includeChart = true, includeHeader = false }) {
+  const rankSize = settings.rankSize === 30 ? 30 : 50;
+  const cols = rankSize === 50 ? 5 : 3;
   const SCALE = 2, PAD = 20;
-  const svgW = SV.COLS * SV.CARD_W + (SV.COLS - 1) * SV.GAP;
-  const rows = Math.ceil(b30.length / SV.COLS);
+  const svgW = cols * SV.CARD_W + (cols - 1) * SV.GAP;
+  const rows = Math.ceil(b30.length / cols);
   const PLAYER_H = includeHeader ? 74 : 0;
   const CHART_H = includeChart && chartData.length ? 210 + 44 : 0;
   const totalH = PAD + PLAYER_H + CHART_H + 30 + 8 + (rows * SV.CARD_H + (rows - 1) * SV.GAP) + PAD;
@@ -227,8 +230,8 @@ async function renderFrame({ ratingHistory, b30, ratingIdx, displayPtt, globalSt
 
   // ── Profile Header ──
   if (includeHeader) {
-    const name = settings.profile?.name || 'Arcaea Best 30';
-    const pttStr = `PTT ${displayPtt.toFixed(2)}`;
+    const name = settings.profile?.name || `Arcaea Best ${rankSize}`;
+    const pttStr = `PTT ${displayPtt.toFixed(3)}`;
     
     c.font = 'bold 22px GeosansLight'; c.fillStyle = '#eae8ff'; c.textAlign = 'left';
     c.fillText(name, PAD, y + 22);
@@ -243,7 +246,7 @@ async function renderFrame({ ratingHistory, b30, ratingIdx, displayPtt, globalSt
     y += 42;
 
     const statsItems = [
-      { label:'BEST30 Avg ', val: globalStats.avg.toFixed(4) },
+      { label:`BEST${rankSize} Avg `, val: globalStats.avg.toFixed(4) },
       { label:'TOP10 Avg ', val: globalStats.t10avg.toFixed(4) },
       { label:'Date Range ', val: `${chartData[0]?.dateStr.split(' ')[0]} ~ ${chartData[chartData.length-1]?.dateStr.split(' ')[0]}` }
     ];
@@ -286,15 +289,15 @@ async function renderFrame({ ratingHistory, b30, ratingIdx, displayPtt, globalSt
   // ── B30 Header ──
   const avg = b30.length ? b30.reduce((s, x) => s + x.potential, 0) / b30.length : 0;
   const t10 = b30.length ? b30.slice(0, 10).reduce((s, x) => s + x.potential, 0) / Math.min(10, b30.length) : 0;
-  const mxptt = (avg * 3 + t10) / 4;
+  const mxptt = maxPotential(b30, rankSize);
   const dateLabel = ratingHistory[ratingIdx]?.dateStr || '';
   const COL = { title:PAD, date:PAD+40, avg:PAD+220, t10:PAD+320, mx:PAD+410 };
 
-  c.font = 'bold 11px Exo-Regular'; c.fillStyle = '#525080'; c.textAlign = 'left'; c.fillText('B30', COL.title, y + 18);
+  c.font = 'bold 11px Exo-Regular'; c.fillStyle = '#525080'; c.textAlign = 'left'; c.fillText(`B${rankSize}`, COL.title, y + 18);
   c.font = 'bold 13px Exo-Regular'; c.fillStyle = '#80c4ff'; c.fillText(dateLabel, COL.date, y + 19);
   if (avg) {
     const stats = [
-      { l:'B30Avg ', v:avg.toFixed(4), x:COL.avg },
+      { l:`B${rankSize}Avg `, v:avg.toFixed(4), x:COL.avg },
       { l:'T10Avg ', v:t10.toFixed(4), x:COL.t10 },
       { l:'Max ', v:mxptt.toFixed(4), x:COL.mx }
     ];
@@ -307,7 +310,7 @@ async function renderFrame({ ratingHistory, b30, ratingIdx, displayPtt, globalSt
 
   const mergedSettings = { ...settings, songMap };
   for (let i = 0; i < b30.length; i++) {
-    await drawCard(c, b30[i], i, PAD + (i % SV.COLS) * (SV.CARD_W + SV.GAP), y + Math.floor(i / SV.COLS) * (SV.CARD_H + SV.GAP), mergedSettings);
+    await drawCard(c, b30[i], i, PAD + (i % cols) * (SV.CARD_W + SV.GAP), y + Math.floor(i / cols) * (SV.CARD_H + SV.GAP), mergedSettings);
   }
 
   return canvas;

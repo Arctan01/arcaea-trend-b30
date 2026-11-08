@@ -5,3 +5,4 @@ node_modules/
 b30-timelapse.mp4
 render/b30-timelapse.mp4
 render/frames/
+render/config.json

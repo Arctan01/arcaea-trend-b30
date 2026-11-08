@@ -27,6 +27,7 @@ fs.mkdirSync(OUT, { recursive: true });
 
 async function main() {
   const settings = {
+    rankSize:     CONFIG.display?.rankSize === 30 ? 30 : 50,
     profile:      CONFIG.profile || { name: 'Player' },
     showLS:       CONFIG.display?.showLS       ?? true,
     maxPureStyle: CONFIG.display?.maxPureStyle ?? 'plus',
@@ -43,7 +44,7 @@ async function main() {
   const INCLUDE_HEADER  = CONFIG.includeHeader ?? true;
 
   // 提前计算全局最高统计信息（供 Header 静态展示）
-  const globalStats = calcBest30(playHistory, null, filter);
+  const globalStats = calcBest30(playHistory, null, filter, settings.rankSize);
 
   // ── 构建生成关键帧列表 ──
   const keyframes = [];
@@ -90,7 +91,7 @@ async function main() {
 
   for (let k = 0; k < keyframes.length; k++) {
     const { ri, rp, displayPtt } = keyframes[k];
-    const { b30 } = calcBest30(playHistory, rp.ts, filter);
+    const { b30 } = calcBest30(playHistory, rp.ts, filter, settings.rankSize);
     const fp = fingerprint(b30);
 
     process.stdout.write(`\r${k+1}/${keyframes.length}  帧:${imgIdx} PTT:${displayPtt.toFixed(2)}`);
