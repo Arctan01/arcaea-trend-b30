@@ -3,10 +3,11 @@ const fs   = require('fs');
 const path = require('path');
 const { parseRatingCSV, parsePlayCSV, calcBest30, fingerprint } = require('./parse');
 const { renderFrame } = require('./draw');
-const { createCanvas } = require('canvas');
+const { videoOptions, loadConfig } = require('./video-options');
+const { createCanvas } = require('@napi-rs/canvas');
 
 const ROOT = path.join(__dirname, '..');
-const CONFIG = JSON.parse(fs.readFileSync(path.join(__dirname, 'config.json'), 'utf-8'));
+const CONFIG = loadConfig();
 
 const ratingHistory = parseRatingCSV(fs.readFileSync(path.resolve(__dirname, CONFIG.ratingCSV), 'utf-8'));
 const playHistory   = parsePlayCSV(fs.readFileSync(path.resolve(__dirname, CONFIG.playCSV), 'utf-8'));
@@ -27,6 +28,7 @@ fs.mkdirSync(OUT, { recursive: true });
 
 async function main() {
   const settings = {
+    scale:        videoOptions(CONFIG).scale,
     rankSize:     CONFIG.display?.rankSize === 30 ? 30 : 50,
     profile:      CONFIG.profile || { name: 'Player' },
     showLS:       CONFIG.display?.showLS       ?? true,

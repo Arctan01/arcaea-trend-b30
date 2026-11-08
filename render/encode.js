@@ -1,7 +1,9 @@
 'use strict';
 const ffmpeg = require('fluent-ffmpeg');
 const path   = require('path');
-const CONFIG = require('./config.json');
+const { videoOptions, loadConfig } = require('./video-options');
+const CONFIG = loadConfig();
+const options = videoOptions(CONFIG);
 
 const outDir = path.resolve(__dirname, CONFIG.outputDir || './frames');
 const concatFile = path.join(outDir, 'concat.txt');
@@ -14,10 +16,10 @@ ffmpeg()
   .inputOptions(['-f concat', '-safe 0'])
   .videoCodec('libx264')
   .outputOptions([
-    '-crf 14',           //数值越大，画质越差，但生成的文件越小 
+    `-crf ${options.crf}`,           //数值越大，画质越差，但生成的文件越小
     '-pix_fmt yuv420p',
-    '-preset slow',
-    `-r ${CONFIG.fps || 30}`,  
+    `-preset ${options.preset}`,
+    `-r ${CONFIG.fps || 30}`,
   ])
   .output(outputFile)
   .on('progress', p => {

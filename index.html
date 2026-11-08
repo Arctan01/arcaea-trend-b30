@@ -274,6 +274,7 @@ input[type=file]{display:none;}
 </div>
  
 <script src="rating.js"></script>
+<script src="canvas-style.js"></script>
 <script>
 // ── state ────────────────────────────────────────
 window.ratingHistory = [];
@@ -786,128 +787,19 @@ function drawChartOnCtx(c, W, H) {
 }
 
 // ── single card canvas drawing ────────────────────
-async function drawCardOnCtx(c, p, i, x0, y0,imgObjMap) {
-  const ds  = diffStyle(p.diff);
-  const cl  = clearCls(p.clearType);
-  const R   = 10;
-  const bx  = x0 + SV.BODY_X;
-  const scoreColor = p.pure === p.maxPure ? SV.ACC2 : SV.TEXT2;
-  const mpStr = settings.maxPureStyle==='plus'
-    ? `(+${p.maxPure})` : `(-${p.pure-p.maxPure})`;
-  const titleStr = truncateSVG(songTitle(p.songId), SV.CARD_W - SV.BODY_X - 84, '700 15px L2-Regular');
-
-  // card bg
-  c.fillStyle = SV.BG;
-  roundRect(c, x0, y0, SV.CARD_W, SV.CARD_H, R); c.fill();
-  c.strokeStyle = ds.border; c.lineWidth = 1;
-  roundRect(c, x0, y0, SV.CARD_W, SV.CARD_H, R); c.stroke();
-
-  // left side clip (accent bar + cover get rounded left corners)
-  c.save();
-  roundRect(c, x0, y0, SV.COVER+3, SV.CARD_H, R); c.clip();
-  // accent bar
-  c.fillStyle = ds.main;
-  c.fillRect(x0, y0, 3, SV.CARD_H);
-  // cover bg
-  c.fillStyle = SV.SURF2;
-  c.fillRect(x0+3, y0, SV.COVER, SV.CARD_H);
-  // cover image
+async function drawCardOnCtx(c, p, i, x0, y0, imgObjMap) {
   const key = p.songId + '_' + p.diff;
-  const cachedImg = imgObjMap.get(key);
-  if (cachedImg && cachedImg.complete && cachedImg.naturalWidth > 0) {
-    // 直接使用缓存的 Image 对象绘制，无需任何网络请求
-    const scale = Math.max(SV.COVER / cachedImg.naturalWidth, SV.CARD_H / cachedImg.naturalHeight);
-    const sw = SV.COVER / scale;
-    const sh = SV.CARD_H / scale;
-    const sx = (cachedImg.naturalWidth - sw) / 2;
-    const sy = (cachedImg.naturalHeight - sh) / 2;
-    c.drawImage(cachedImg, sx, sy, sw, sh, x0 + 3, y0, SV.COVER, SV.CARD_H);
-  }else {
-    console.warn(`[drawCardOnCtx] ${key} not found in DOM, fallback to fetch`);
-  }
-  // 如果 DOM 中未找到（极小概率），才回退 fetch，但通常不会发生
-  c.restore();
-
-  // row1: rank + title + ptt
-  c.textAlign = 'left';
-  c.font = 'bold 17px Exo-Regular, sans-serif';
-  c.fillStyle = SV.NO_COL;
-  c.fillText(`#${i+1}`, bx, y0+SV.R1_Y);
-  c.font = 'bold 15px L2-Regular, sans-serif';
-  c.fillStyle = SV.TEXT;
-  c.fillText(titleStr, bx+34, y0+SV.R1_Y);
-  c.font = 'bold 16px Exo-Regular, sans-serif';
-  c.fillStyle = ds.main;
-  c.textAlign = 'right';
-  c.fillText(p.potential.toFixed(4), x0+SV.CARD_W-8, y0+SV.R1_Y);
-
-  // row2: score
-  c.textAlign = 'left';
-  if (p.pure===p.maxPure) { c.shadowBlur=8; c.shadowColor='rgba(100,180,255,0.7)'; }
-  else { c.shadowBlur=4; c.shadowColor='rgba(152,150,200,0.5)'; }
-  c.font = 'bold 26px Exo-Regular, sans-serif';
-  c.fillStyle = scoreColor;
-  c.fillText(fmtScore(p.score), bx, y0+SV.R2_Y-2);
-  c.shadowBlur=0; c.shadowColor='transparent';
-
-  // clear label
-  if (cl.lbl) {
-    if (p.clearType===3) { c.shadowBlur=4; c.shadowColor='rgba(100,180,255,0.5)'; }
-    c.font = 'bold 20px Exo-Regular, sans-serif';
-    c.fillStyle = cl.col;
-    c.fillText(cl.lbl, bx+155, y0+SV.R2_Y-3);
-    c.shadowBlur=0; c.shadowColor='transparent';
-  }
-
-  // const badge
-  c.fillStyle = ds.bg;
-  roundRect(c, x0+SV.CARD_W-48, y0+SV.R2_Y-19, 38, 17, 3); c.fill();
-  c.strokeStyle = ds.border; c.lineWidth = 0.5;
-  roundRect(c, x0+SV.CARD_W-48, y0+SV.R2_Y-19, 38, 17, 3); c.stroke();
-  c.font = 'bold 13px Exo-Regular, sans-serif';
-  c.fillStyle = ds.main;
-  c.textAlign = 'center';
-  c.fillText(p.constant.toFixed(1), x0+SV.CARD_W-29, y0+SV.R2_Y-6);
-
-  // row3: pfl + date (same baseline = DATE_Y)
-  c.textAlign = 'left';
-
-  // P
-  c.font = '12px Exo-Regular, sans-serif'; c.fillStyle = SV.P_COL;
-  c.fillText('P/', bx, y0+SV.DATE_Y);
-  let px = bx + c.measureText('P/').width;
-  c.font = 'bold 12px Exo-Regular, sans-serif';
-  c.fillText(`${p.pure}`, px, y0+SV.DATE_Y);
-  px += c.measureText(`${p.pure}`).width;
-  c.font = '12px Exo-Regular, sans-serif';
-  c.fillText(` ${mpStr}`, px, y0+SV.DATE_Y);
-
-  // F
-  c.fillStyle = SV.F_COL;
-  c.fillText('F/', bx+90, y0+SV.DATE_Y);
-  c.font = 'bold 12px Exo-Regular, sans-serif';
-  c.fillText(`${p.far}`, bx+90+c.measureText('F/').width, y0+SV.DATE_Y);
-
-  // L
-  c.font = '12px Exo-Regular, sans-serif'; c.fillStyle = SV.L_COL;
-  c.fillText('L/', bx+120, y0+SV.DATE_Y);
-  c.font = 'bold 12px Exo-Regular, sans-serif';
-  c.fillText(`${p.lost}`, bx+120+c.measureText('L/').width, y0+SV.DATE_Y);
-
-  // LS
-  if (settings.showLS) {
-    c.font = '12px Exo-Regular, sans-serif'; c.fillStyle = SV.LS_COL;
-    c.fillText('LS/', bx+152, y0+SV.DATE_Y);
-    c.font = 'bold 12px Exo-Regular, sans-serif';
-    c.fillText(p.ls.toFixed(1), bx+152+c.measureText('LS/').width, y0+SV.DATE_Y);
-  }
-
-  // date
-  c.font = 'bold 12px Exo-Regular, sans-serif';
-  c.fillStyle = SV.DATE_COL; c.textAlign = 'right';
-  c.fillText(`${calculateDaysSince(p.ts)}d`, x0+SV.CARD_W-8, y0+SV.DATE_Y);
+  let img = imgObjMap.get(key);
+  if (!img || !img.complete || !img.naturalWidth) {
+    for (const src of [imgSrc(p.songId, p.diff), `./src/songs/${p.songId}/1080_base_256.jpg`, `./src/songs/${p.songId}/base_256.jpg`]) {
+      try {
+        img = new Image(); img.src = src; await img.decode();
+        imgObjMap.set(key, img); break;
+      } catch { img = null; }
+    }
+  } else { await img.decode(); }
+  ArcaeaCanvas.drawCard(c, p, i, x0, y0, { ...settings, songMap }, img);
 }
-
 
 // ── CSV parsers ───────────────────────────────────
 const { parseRatingCSV, parsePlayCSV } = ArcaeaRating;

@@ -23,7 +23,7 @@
 - **存档信息**：手动填写用户名与潜力值，CSV 导入的最高 PTT 另行标注不覆盖
 - **定数查询模式**：给定特定定数范围，展示 B50 / P50 等数据，支持展开全部及多种排序方式
 - **图片导出**：导出当前 B50 卡片为 PNG，可选择是否包含 PTT 折线图和存档信息
-- **视频导出**：本地 Node.js 驱动，纯 Canvas 渲染，生成 PTT 成长历程视频
+- **视频导出**：本地 Node.js 驱动，Canvas 直接送入 FFmpeg，生成 PTT 成长历程视频
 
 ## 目录结构
 
@@ -33,7 +33,8 @@
 ├── package.json          # 视频导出依赖（可选）
 ├── render/               # 视频导出脚本（可选）
 │   ├── config.json       # 渲染配置
-│   ├── render.js         # 主渲染脚本（node-canvas）
+│   ├── video.js          # Canvas → FFmpeg 直传（默认）
+│   ├── render.js         # 兼容 PNG 逐帧导出
 │   ├── draw.js           # Canvas 绘制逻辑
 │   ├── parse.js          # CSV 解析与 B50 计算
 │   └── encode.js         # ffmpeg 合成脚本
@@ -109,82 +110,78 @@ python -m http.server 8080
 访问 `http://localhost:8080`。
 
 ## 视频导出
- 
-旧方案使用 Puppeteer 驱动无头浏览器逐帧截图，再通过 ffmpeg 合成视频，截图和合成均在本地完成，不依赖 GitHub Pages。
 
-重构之后使用 Node.js + node-canvas 在本地直接渲染每一帧，通过 ffmpeg 合成视频。不依赖浏览器，渲染速度远快于截图方案。
+默认通过本地 Skia Canvas 绘制，原始 RGBA 像素直接送入 FFmpeg，边绘制边编码。只生成最终 MP4，不创建逐帧 PNG，不需要启动网页服务器。静止画面复用像素缓冲，转场在内存中合成；写入受编码器速度约束，避免缓存整段视频。
 
-![预览图](./src/description/0.png)
+网页图片导出与视频共用 `canvas-style.js` 的卡片几何、封面裁剪、文字布局和配色。视频加载项目内字体，由 Skia 处理字重，移除了旧版重复描边加粗，并统一文字测量；不同平台的抗锯齿和 H.264 有损压缩仍可能带来细微差异。
 
-### 环境准备
- 
+### 环境与运行
+
 ```bash
-# 安装 Node.js 依赖（含 node-canvas、fluent-ffmpeg）
 npm install
+# 系统需要 ffmpeg（Windows 可用 winget install ffmpeg）
+# 首次使用：复制配置模板，然后编辑 CSV 路径和输出范围
+cp render/config.example.json render/config.json
+npm run video
 
-# 安装 ffmpeg（系统级）
-# Windows
-winget install ffmpeg
-# macOS
-brew install ffmpeg
+# 使用另一份配置
+npm run video -- --config data/my-video-config.json
 ```
- 
-### 配置
- 
-### 配置
 
-编辑 `render/config.json`，无需修改脚本。
+所有配置文件中的输入、输出路径均相对 `render/`，与旧版配置兼容。若已有 `render/config.json`，直接添加 `video` 字段即可，无需覆盖其他配置。
+
+### 倍率与编码档位
+
+```json
+"video": {
+  "scale": 1,
+  "profile": "balanced"
+}
+```
+
+`scale` 支持 `0.25～4` 内的小数，例如 `0.5`、`0.75`、`1`、`1.25`、`1.5`、`2`。默认 1 倍；B50 包含图表和存档信息时约为 1812 × 1298，2 倍为 3624 × 2596。最终宽高向上取偶数以兼容 H.264；不足 50/30 曲时仍保留十行画布，避免历史回放尺寸变化。
+
+| `video.profile` | x264 preset | CRF | 用途 |
+|---|---|---|---|
+| `draft` | ultrafast | 26 | 快速检查内容，压缩效率较低 |
+| `fast` | veryfast | 23 | 快速分享 |
+| `balanced`（默认） | fast | 20 | 日常导出 |
+| `quality` | slow | 17 | 更高画质 |
+| `archival` | veryslow | 14 | 保留更多细节，耗时较长 |
+
+也可额外指定 `video.preset` 和 `video.crf`，覆盖档位默认值。CRF 越小通常画质越高、文件越大；preset 主要控制编码速度与压缩效率。倍率对像素量影响很大，2 倍需要处理约 4 倍像素。
+
+### 其他配置
 
 | 参数 | 示例值 | 说明 |
 |---|---|---|
-| `ratingCSV` | `"../data/ratings.csv"` | Rating History 文件路径 |
-| `playCSV` | `"../data/all_scores.csv"` | Play History 文件路径 |
-| `outputDir` | `"./frames"` | 帧图输出目录 |
-| `output` | `"./b30-timelapse.mp4"` | 视频输出路径 |
-| `mode` | `"ptt"` / `"all"` / `"point"` | 关键帧生成模式（见下方说明） |
-| `pttStart` | `12.90` | 起始 PTT（`ptt` / `point` 模式） |
-| `pttEnd` | `13.00` | 结束 PTT（`ptt` / `point` 模式） |
-| `pttStep` | `0.01` | PTT 步长（`ptt` 模式） |
-| `fps` | `30` | 视频帧率 |
-| `secPerPoint` | `1.5` | 每个关键帧停留时长（秒） |
-| `transitionSecs` | `0.5` | 帧间 Crossfade 过渡时长（秒） |
-| `includeChart` | `true` | 是否在画面中包含 PTT 折线图 |
-| `includeHeader` | `true` | 是否在画面中包含存档信息和统计数据 |
-| `profile.name` | `""` | 用户名，留空则不显示 |
-| `profile.ptt` | `""` | 显示的 PTT 值，留空则不显示（已弃用） |
-| `display.rankSize` | `50` / `30` | 新版 B50（默认）或旧版 B30 |
-| `display.filter` | `"b30"` | 排行筛选键（兼容旧配置）：`b30` / `p30` / `ls0` / `max` |
-| `display.maxPureStyle` | `"plus"` | MaxPure 样式：`plus`（+maxPure）/ `minus`（−shift） |
-| `display.showLS` | `true` | 是否显示 LS 字段 |
- 
-**关键帧生成模式说明：**
+| `ratingCSV` | `"../data/ratings.csv"` | Rating History 文件 |
+| `playCSV` | `"../data/all_scores.csv"` | Play History 文件 |
+| `output` | `"./b50-timelapse.mp4"` | 最终 MP4 路径 |
+| `mode` | `"ptt"` / `"all"` / `"point"` | PTT 等间隔 / 全部历史 / 指定 PTT 范围内的历史 |
+| `pttStart` / `pttEnd` | `12.98` / `13.10` | `ptt` 与 `point` 模式的范围 |
+| `pttStep` | `0.01` | `ptt` 模式的步长，至少 0.0001 |
+| `fps` | `30` | 1～120 的整数 |
+| `secPerPoint` | `1.5` | 每个历史节点的总时长，包含进入该节点的转场 |
+| `transitionSecs` | `0.5` | 转场时长；设 0 则直接切换，不得大于 `secPerPoint` |
+| `includeChart` / `includeHeader` | `true` | 包含历史图表 / 存档与统计信息 |
+| `profile.name` | `"Player"` | 名称；留空显示 Arcaea Best 50/30 |
+| `display.rankSize` | `50` / `30` | 新版 B50（默认）/ 旧版 B30 |
+| `display.filter` | `"b30"` / `"p30"` / `"ls0"` / `"max"` | 排行筛选键，保留旧配置命名 |
+| `display.maxPureStyle` | `"plus"` / `"minus"` | +maxPure / −shift |
+| `display.showLS` | `true` | 显示 LS |
 
-| 模式 | 说明 |
-|---|---|
-| `ptt` | 按 `pttStep` 步长在 `pttStart`～`pttEnd` 区间内生成等间距关键帧，PTT 数字匀速跳动，视觉效果最流畅 |
-| `point` | 一对一渲染每个 rating 记录点，可用 `pttStart`/`pttEnd` 过滤范围 |
-| `all` | 渲染全部 rating 记录点，不做过滤 |
+按视频帧率取整时长，累计时长误差不超过半帧。历史节点即使成绩相同，也会更新日期与图表标记。找不到记录或配置无效时返回失败；编码失败会清理本次临时 MP4，已存在的目标视频在成功前保持完整。
 
-### 运行
- 
-将两个 CSV 文件放入 `data/` 目录，然后：
- 
+### 保留逐帧导出
+
+需要手动检查 PNG 时，可使用原来的流程；它也支持倍率与编码档位：
+
 ```bash
-# 终端1：启动本地服务器（保持运行）
-npm run serve
- 
-# 终端2：一键截图并合成视频
-npm run video
+npm run video:frames
+# 或分步
+npm run render
+npm run encode
 ```
- 
-也可以分步运行：
- 
-```bash
-npm run render   # 仅截图，输出到 frames/
-npm run encode   # 仅合成，输出 b30-timelapse.mp4
-```
- 
-### 输出
- 
-合成完成后生成 `b30-timelapse.mp4`。`render/frames/` 目录在下次运行时会自动清空重建。
- 
+
+仅此兼容流程会清空重建 `outputDir`（默认 `render/frames/`）。默认的 `npm run video` 不读取、不删除这个目录。
