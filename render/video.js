@@ -2,7 +2,8 @@
 const fs = require('node:fs');
 const path = require('node:path');
 const { createCanvas } = require('@napi-rs/canvas');
-const { parseRatingCSV, parsePlayCSV, calcBest30 } = require('./parse');
+const { parseRatingCSV, parsePlayCSV } = require('./parse');
+const { createSelection } = require('./selection');
 const { renderFrame } = require('./draw');
 const { loadConfig, videoOptions } = require('./video-options');
 const { buildTimeline } = require('./timeline');
@@ -10,6 +11,7 @@ const { createEncoder } = require('./stream-encoder');
 
 async function exportVideo(config) {
   const started = performance.now(), options = videoOptions(config);
+  const selection = createSelection(config);
   const resolve = value => path.resolve(__dirname, value);
   const ratingFile = resolve(config.ratingCSV), playFile = resolve(config.playCSV);
   const output = resolve(config.output ?? './b50-timelapse.mp4');
@@ -21,21 +23,17 @@ async function exportVideo(config) {
   const songMap = {};
   const songs = JSON.parse(fs.readFileSync(path.join(__dirname, '../src/songs/songlist'), 'utf8'));
   for (const song of songs.songs || []) songMap[song.id] = song.title_localized?.en || song.id;
-  const settings = { rankSize: config.display?.rankSize === 30 ? 30 : 50,
+  const settings = { rankSize: selection.rankSize, displayMode: selection.displayMode,
     showLS: config.display?.showLS ?? true, maxPureStyle: config.display?.maxPureStyle ?? 'plus',
     profile: config.profile || {}, filter: config.display?.filter ?? 'b30', scale: options.scale };
-  const filters = { b30: null, p30: p => p.far === 0 && p.lost === 0,
-    ls0: p => p.ls === 0 && p.diff >= 2, max: p => p.pure === p.maxPure };
-  if (!(settings.filter in filters)) throw new Error(`Unknown filter: ${settings.filter}`);
-  const filter = filters[settings.filter];
-  const globalStats = calcBest30(plays, null, filter, settings.rankSize);
+  const globalStats = selection.globalStats(plays);
   let encoder, previous, mix, ctx;
   try {
     for (let i = 0; i < points.length; i++) {
       const point = points[i];
-      const { b30 } = calcBest30(plays, point.rp.ts, filter, settings.rankSize);
+      const { b30, query } = selection.select(plays, point.rp.ts);
       const canvas = await renderFrame({ ratingHistory: ratings, b30, ratingIdx: point.ri,
-        displayPtt: point.displayPtt, globalStats, chartData: ratings, songMap, settings,
+        displayPtt: point.displayPtt, globalStats, query, chartData: ratings, songMap, settings,
         includeChart: config.includeChart ?? true, includeHeader: config.includeHeader ?? true });
       if (!encoder) {
         encoder = createEncoder({ width: canvas.width, height: canvas.height,

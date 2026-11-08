@@ -151,6 +151,41 @@ npm run video -- --config data/my-video-config.json
 
 也可额外指定 `video.preset` 和 `video.crf`，覆盖档位默认值。CRF 越小通常画质越高、文件越大；preset 主要控制编码速度与压缩效率。倍率对像素量影响很大，2 倍需要处理约 4 倍像素。
 
+### 定数查询视频
+
+在配置中将 `display.mode` 设为 `cq`，即可生成与网页“定数查询”一致的历史视频；`cq` 对应网页的定数范围与排序，排行筛选、LS 与 MaxPure 样式沿用 `display`：
+
+```json
+"display": {
+  "mode": "cq",
+  "rankSize": 50,
+  "filter": "b30",
+  "maxPureStyle": "plus",
+  "showLS": true
+},
+"cq": {
+  "min": 9,
+  "max": 9.9,
+  "sort": "potential"
+}
+```
+
+- `min` / `max`：包含端点的定数范围，默认 9～9.9。网页 7+～12+ 快捷按钮分别对应 7～7.9、8～8.9 等，也可自定义范围。
+- `sort`：`potential`（PTT 降序，默认）、`score`（分数降序）、`constant`（定数降序）、`recent`（最近成绩优先）。
+- `filter`：`b30`（全部）、`p30`（Far=Lost=0）、`ls0`（LS=0 且难度至少 FTR）、`max`（Pure=MaxPure）。先选取每张谱面在该时间点的最佳成绩，再筛选排序，与网页一致。
+
+画布固定为 **5 列 × 10 行**，每帧只绘制排序后的前 50 条；后续条目舍弃，不支持展开全部。记录不足时保留空位。标题中的 `显示数/总数` 和 `Avg` 统计整个匹配范围（与网页一致），不会把被截去的条目算成 0，也不会把按分数等排序的列表误标为 B50 Max。
+
+`display.rankSize: 30` 可使用旧版潜力值公式，定数查询画布仍固定 50 个位置。`mode: point / all / ptt` 继续控制时间采样方式，与 `display.mode` 独立。倍率、编码档位、图表、存档信息和转场均可继续调整。
+
+可直接复制 [定数查询配置模板](render/config.cq.example.json) 修改路径后运行：
+
+```bash
+npm run video -- --config render/config.cq.example.json
+```
+
+恢复普通 Best 排行时设置 `display.mode: "b30"`，或省略该字段。兼容的 PNG 逐帧流程也支持上述查询参数。
+
 ### 其他配置
 
 | 参数 | 示例值 | 说明 |
@@ -166,6 +201,7 @@ npm run video -- --config data/my-video-config.json
 | `transitionSecs` | `0.5` | 转场时长；设 0 则直接切换，不得大于 `secPerPoint` |
 | `includeChart` / `includeHeader` | `true` | 包含历史图表 / 存档与统计信息 |
 | `profile.name` | `"Player"` | 名称；留空显示 Arcaea Best 50/30 |
+| `display.mode` | `"b30"` / `"cq"` | Best 排行（默认）/ 定数查询 |
 | `display.rankSize` | `50` / `30` | 新版 B50（默认）/ 旧版 B30 |
 | `display.filter` | `"b30"` / `"p30"` / `"ls0"` / `"max"` | 排行筛选键，保留旧配置命名 |
 | `display.maxPureStyle` | `"plus"` / `"minus"` | +maxPure / −shift |

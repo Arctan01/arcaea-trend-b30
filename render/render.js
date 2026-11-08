@@ -1,13 +1,15 @@
 'use strict';
 const fs   = require('fs');
 const path = require('path');
-const { parseRatingCSV, parsePlayCSV, calcBest30, fingerprint } = require('./parse');
+const { parseRatingCSV, parsePlayCSV, fingerprint } = require('./parse');
 const { renderFrame } = require('./draw');
+const { createSelection } = require('./selection');
 const { videoOptions, loadConfig } = require('./video-options');
 const { createCanvas } = require('@napi-rs/canvas');
 
 const ROOT = path.join(__dirname, '..');
 const CONFIG = loadConfig();
+const selection = createSelection(CONFIG);
 
 const ratingHistory = parseRatingCSV(fs.readFileSync(path.resolve(__dirname, CONFIG.ratingCSV), 'utf-8'));
 const playHistory   = parsePlayCSV(fs.readFileSync(path.resolve(__dirname, CONFIG.playCSV), 'utf-8'));
@@ -28,6 +30,7 @@ fs.mkdirSync(OUT, { recursive: true });
 
 async function main() {
   const settings = {
+    displayMode:  selection.displayMode,
     scale:        videoOptions(CONFIG).scale,
     rankSize:     CONFIG.display?.rankSize === 30 ? 30 : 50,
     profile:      CONFIG.profile || { name: 'Player' },
@@ -36,9 +39,6 @@ async function main() {
     filter:       CONFIG.display?.filter       ?? 'b30',
   };
 
-  const FILTERS = { b30: null, p30: p => p.far === 0 && p.lost === 0, ls0: p => p.ls === 0 && p.diff >= 2, max: p => p.pure === p.maxPure };
-  const filter = FILTERS[settings.filter] || null;
-
   const SEC_PER_POINT   = CONFIG.secPerPoint   ?? 1.5;
   const TRANSITION_SECS = CONFIG.transitionSecs ?? 0.5;
   const FPS             = CONFIG.fps           ?? 30;
@@ -46,7 +46,7 @@ async function main() {
   const INCLUDE_HEADER  = CONFIG.includeHeader ?? true;
 
   // 提前计算全局最高统计信息（供 Header 静态展示）
-  const globalStats = calcBest30(playHistory, null, filter, settings.rankSize);
+  const globalStats = selection.globalStats(playHistory);
 
   // ── 构建生成关键帧列表 ──
   const keyframes = [];
@@ -93,8 +93,8 @@ async function main() {
 
   for (let k = 0; k < keyframes.length; k++) {
     const { ri, rp, displayPtt } = keyframes[k];
-    const { b30 } = calcBest30(playHistory, rp.ts, filter, settings.rankSize);
-    const fp = fingerprint(b30);
+    const { b30, query } = selection.select(playHistory, rp.ts);
+    const fp = fingerprint(b30) + (query ? `_${ri}_${query.total}_${query.avg}` : '');
 
     process.stdout.write(`\r${k+1}/${keyframes.length}  帧:${imgIdx} PTT:${displayPtt.toFixed(2)}`);
 
@@ -108,7 +108,7 @@ async function main() {
     }
 
     const canvas = await renderFrame({
-      ratingHistory, b30, ratingIdx: ri, displayPtt, globalStats,
+      ratingHistory, b30, query, ratingIdx: ri, displayPtt, globalStats,
       chartData: ratingHistory, songMap, settings,
       includeChart: INCLUDE_CHART, includeHeader: INCLUDE_HEADER
     });

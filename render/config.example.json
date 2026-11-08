@@ -9,7 +9,8 @@
   "display": {
     "filter": "b30",
     "maxPureStyle": "plus",
-    "showLS": true
+    "showLS": true,
+    "mode": "b30"
   },
   "outputDir": "./frames",
   "output": "./b50-timelapse.mp4",
@@ -25,5 +26,10 @@
   "video": {
     "scale": 1,
     "profile": "balanced"
+  },
+  "cq": {
+    "min": 9,
+    "max": 9.9,
+    "sort": "potential"
   }
 }

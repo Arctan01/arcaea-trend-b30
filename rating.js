@@ -59,5 +59,24 @@
     return (list.reduce((s, p) => s + p.potential, 0) +
       list.slice(0, 10).reduce((s, p) => s + p.potential, 0)) / (size + 10);
   }
-  return { potential, parseRatingCSV, parsePlayCSV, calcBest, maxPotential };
+  function queryConstants(plays, ts = null, filter = null, size = 50, query = {}) {
+    const { min = 9, max = 9.9, sort = 'potential' } = query;
+    if (![min, max].every(Number.isFinite) || min < 0 || max > 99 || min > max)
+      throw new Error('cq.min / cq.max must be between 0 and 99, with min <= max');
+    const comparators = {
+      potential: (a, b) => b.potential - a.potential,
+      score: (a, b) => b.score - a.score,
+      constant: (a, b) => b.constant - a.constant,
+      recent: (a, b) => b.ts - a.ts,
+    };
+    if (!Object.hasOwn(comparators, sort)) throw new Error(`Unknown cq.sort: ${sort}`);
+    // Match the web: choose each chart's best record before applying query filters.
+    const all = calcBest(plays, ts, null, size).all
+      .filter(p => (!filter || filter(p)) && p.constant >= min && p.constant <= max)
+      .sort(comparators[sort]);
+    return { all, top: all.slice(0, 50), total: all.length,
+      avg: all.length ? all.reduce((s, p) => s + p.potential, 0) / all.length : 0,
+      min, max, sort };
+  }
+  return { potential, parseRatingCSV, parsePlayCSV, calcBest, maxPotential, queryConstants };
 });

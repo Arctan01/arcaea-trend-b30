@@ -65,9 +65,11 @@ function drawChart(c, W, H, chartData) {
   }
 }
 
-async function renderFrame({ ratingHistory, b30, ratingIdx, displayPtt, globalStats, chartData, songMap, settings, includeChart = true, includeHeader = false }) {
+async function renderFrame({ ratingHistory, b30, ratingIdx, displayPtt, globalStats, query, chartData, songMap, settings, includeChart = true, includeHeader = false }) {
   const rankSize = settings.rankSize === 30 ? 30 : 50;
-  const cols = rankSize === 50 ? 5 : 3;
+  const isCQ = settings.displayMode === 'cq';
+  const cols = isCQ || rankSize === 50 ? 5 : 3;
+  if (isCQ) b30 = b30.slice(0, 50);
   const SCALE = settings.scale ?? 1, PAD = 20;
   const svgW = cols * SV.CARD_W + (cols - 1) * SV.GAP;
   const rows = Math.max(10, Math.ceil(b30.length / cols));
@@ -149,17 +151,35 @@ async function renderFrame({ ratingHistory, b30, ratingIdx, displayPtt, globalSt
   const dateLabel = ratingHistory[ratingIdx]?.dateStr || '';
   const COL = { title:PAD, date:PAD+40, avg:PAD+220, t10:PAD+320, mx:PAD+410 };
 
-  c.font = 'bold 11px Exo-Regular'; c.fillStyle = '#525080'; c.textAlign = 'left'; c.fillText(({ p30: `P${rankSize}`, ls0: `LS0·${rankSize}`, max: `MAX·${rankSize}` })[settings.filter] || `B${rankSize}`, COL.title, y + 18);
-  c.font = 'bold 13px Exo-Regular'; c.fillStyle = '#80c4ff'; c.fillText(dateLabel, COL.date, y + 19);
-  if (avg) {
-    const stats = [
-      { l:`B${rankSize}Avg `, v:avg.toFixed(4), x:COL.avg },
-      { l:'T10Avg ', v:t10.toFixed(4), x:COL.t10 },
-      { l:'Max ', v:mxptt.toFixed(4), x:COL.mx }
-    ];
-    for (const { l, v, x } of stats) {
-      c.font = '11px Exo-Regular'; c.fillStyle = '#9896c8'; c.fillText(l, x, y + 18);
-      c.font = 'bold 11px Exo-Regular'; c.fillStyle = '#c8a0ff'; c.fillText(v, x + measureText(l, '11px Exo-Regular'), y + 18);
+  if (isCQ) {
+    const range = `${query.min} ~ ${query.max}`;
+    const sortLabel = { potential: 'PTT ↓', score: 'Score ↓', constant: 'Const ↓', recent: 'Recent' }[query.sort];
+    const filterLabel = { b30: 'B', p30: 'P', ls0: 'LS0', max: 'MAX' }[settings.filter] || 'B';
+    let x = PAD;
+    c.textAlign = 'left'; c.font = 'bold 13px Exo-Regular'; c.fillStyle = '#80c4ff';
+    c.fillText(`Const ${range}`, x, y + 19);
+    x += measureText(`Const ${range}`, c.font) + 16;
+    c.font = '11px Exo-Regular'; c.fillStyle = '#9896c8';
+    const count = `${b30.length}/${query.total} charts`;
+    c.fillText(count, x, y + 18); x += measureText(count, c.font) + 16;
+    c.fillStyle = '#c8a0ff'; c.fillText(`Avg ${query.avg.toFixed(4)}`, x, y + 18);
+    x += measureText(`Avg ${query.avg.toFixed(4)}`, c.font) + 16;
+    c.fillStyle = '#9896c8'; c.fillText(`${filterLabel} · ${sortLabel}`, x, y + 18);
+    x += measureText(`${filterLabel} · ${sortLabel}`, c.font) + 20;
+    c.fillStyle = '#80c4ff'; c.fillText(dateLabel, x, y + 18);
+  } else {
+    c.font = 'bold 11px Exo-Regular'; c.fillStyle = '#525080'; c.textAlign = 'left'; c.fillText(({ p30: `P${rankSize}`, ls0: `LS0·${rankSize}`, max: `MAX·${rankSize}` })[settings.filter] || `B${rankSize}`, COL.title, y + 18);
+    c.font = 'bold 13px Exo-Regular'; c.fillStyle = '#80c4ff'; c.fillText(dateLabel, COL.date, y + 19);
+    if (avg) {
+      const stats = [
+        { l:`B${rankSize}Avg `, v:avg.toFixed(4), x:COL.avg },
+        { l:'T10Avg ', v:t10.toFixed(4), x:COL.t10 },
+        { l:'Max ', v:mxptt.toFixed(4), x:COL.mx }
+      ];
+      for (const { l, v, x } of stats) {
+        c.font = '11px Exo-Regular'; c.fillStyle = '#9896c8'; c.fillText(l, x, y + 18);
+        c.font = 'bold 11px Exo-Regular'; c.fillStyle = '#c8a0ff'; c.fillText(v, x + measureText(l, '11px Exo-Regular'), y + 18);
+      }
     }
   }
   y += 30;

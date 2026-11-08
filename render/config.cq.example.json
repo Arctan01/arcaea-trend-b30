@@ -1,0 +1,35 @@
+{
+  "url": "http://localhost:8080",
+  "ratingCSV": "../data/ratings.csv",
+  "playCSV": "../data/all_scores.csv",
+  "profile": {
+    "name": "",
+    "ptt": ""
+  },
+  "display": {
+    "filter": "b30",
+    "maxPureStyle": "plus",
+    "showLS": true,
+    "mode": "cq"
+  },
+  "outputDir": "./frames",
+  "output": "./constant-query.mp4",
+  "mode": "point",
+  "pttStart": 12.98,
+  "pttEnd": 13.1,
+  "pttStep": 0.05,
+  "fps": 30,
+  "secPerPoint": 1.5,
+  "transitionSecs": 0.5,
+  "includeChart": true,
+  "includeHeader": true,
+  "video": {
+    "scale": 1,
+    "profile": "balanced"
+  },
+  "cq": {
+    "min": 9,
+    "max": 9.9,
+    "sort": "potential"
+  }
+}

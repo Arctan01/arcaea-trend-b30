@@ -865,20 +865,9 @@ function updateStaticStats() {
 function runCQ(ts=null) {
   const { min, max, sort, showAll } = cqState;
   if (min===null||max===null) return;
-  const { all:allBest } = calcBest30(ts);
-  const filter = FILTERS[settings.filter];
-  let all = allBest.filter(p => !filter||filter(p))
-    .filter(p => p.constant>=min && p.constant<=max)
-    .sort((a,b)=>{
-      if (sort==='potential') return b.potential-a.potential;
-      if (sort==='score')     return b.score-a.score;
-      if (sort==='constant')  return b.constant-a.constant;
-      if (sort==='recent')    return b.ts-a.ts;
-      return 0;
-    });
+  const { all, avg } = ArcaeaRating.queryConstants(playHistory, ts, FILTERS[settings.filter], settings.rankSize, { min, max, sort });
   const shown = showAll ? all : all.slice(0,settings.rankSize);
   shownList = shown;
-  const avg = all.length ? all.reduce((s,x)=>s+x.potential,0)/all.length : 0;
   updateHeaderSVG({ mode:'cq', dateOrRange:`${min} ~ ${max}`, avg:avg.toFixed(4), count:all.length });
   window._lastHeaderParams = {
     mode: 'cq',
